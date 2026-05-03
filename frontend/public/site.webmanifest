@@ -1,0 +1,21 @@
+{
+  "name": "DevTweet Hub",
+  "short_name": "DevTweetHub",
+  "description": "Developer community feed, profiles, and DMs — campus energy for engineers.",
+  "categories": ["social", "news", "productivity"],
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#fffef8",
+  "theme_color": "#facc15",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

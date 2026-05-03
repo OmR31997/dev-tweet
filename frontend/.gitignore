@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.local
+
+# Tests & coverage
+coverage/
+
+# Environment — ignore secrets; keep template tracked
+.env
+.env.*
+!.env.example
+
+# Logs & debug
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.idea/
+*.swp
+*.swo
+
+# Vite
+.vite/
+
+# TypeScript
+*.tsbuildinfo
+
+# Optional tooling
+.cache/
