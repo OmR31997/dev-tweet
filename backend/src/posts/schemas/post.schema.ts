@@ -28,6 +28,20 @@ export class Post {
 
   @Prop({ type: [String], default: [] })
   tags: string[];
+
+  /** Users who have reposted this post (for toggle + count). */
+  @Prop({ type: [String], default: [] })
+  reposts: string[];
+
+  /** When set, this doc is a repost of another post (shown in the feed). */
+  @Prop({ default: null, index: true })
+  repostOf?: string;
+
+  @Prop({ default: null })
+  repostedById?: string;
+
+  @Prop({ default: null })
+  repostedByName?: string;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);

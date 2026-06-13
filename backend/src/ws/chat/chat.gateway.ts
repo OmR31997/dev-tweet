@@ -2,6 +2,7 @@ import {
   ConnectedSocket,
   MessageBody,
   OnGatewayConnection,
+  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -10,8 +11,7 @@ import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { MessagesService } from '../../messages/messages.service';
-import { NotificationsService } from '../../notifications/notifications.service';
-import { UsersService } from '../../users/users.service';
+import { RealtimeService } from '../../events/realtime.service';
 
 function resolveCorsOrigin(): string[] | string {
   const raw = process.env.CLIENT_ORIGIN;
@@ -21,16 +21,20 @@ function resolveCorsOrigin(): string[] | string {
 }
 
 @WebSocketGateway({ cors: { origin: resolveCorsOrigin(), credentials: true } })
-export class ChatGateway implements OnGatewayConnection {
+export class ChatGateway implements OnGatewayConnection, OnGatewayInit {
   @WebSocketServer() server: Server;
 
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly messagesService: MessagesService,
-    private readonly notificationsService: NotificationsService,
-    private readonly usersService: UsersService,
+    private readonly realtime: RealtimeService,
   ) {}
+
+  afterInit(server: Server) {
+    // Expose the socket server to HTTP services for realtime fan-out.
+    this.realtime.setServer(server);
+  }
 
   async handleConnection(client: Socket) {
     const token = client.handshake.auth?.token as string | undefined;
@@ -55,18 +59,17 @@ export class ChatGateway implements OnGatewayConnection {
     @MessageBody() body: { recipientId: string; content: string },
   ) {
     const senderId = client.data.userId as string;
-    const message = await this.messagesService.send(senderId, body);
-    const sender = await this.usersService.getById(senderId);
-    await this.notificationsService.create(
-      body.recipientId,
-      senderId,
-      sender?.displayName ?? 'Developer',
-      'message',
-    );
-    this.server.to(`user:${body.recipientId}`).emit('dm.received', message);
-    client.emit('dm.received', message);
-    this.server.to(`user:${body.recipientId}`).emit('notification.created');
-    return message;
+    // send() persists + fans out 'dm.received' to both ends via RealtimeService.
+    return this.messagesService.send(senderId, body);
+  }
+
+  @SubscribeMessage('dm.delivered')
+  async deliveredAck(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { messageId: string },
+  ) {
+    const recipientId = client.data.userId as string;
+    await this.messagesService.markDelivered(body.messageId, recipientId);
   }
 
   @SubscribeMessage('typing.start')

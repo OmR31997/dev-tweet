@@ -3,7 +3,15 @@ import { HydratedDocument } from 'mongoose';
 
 export type NotificationDocument = HydratedDocument<Notification>;
 
-export type NotificationType = 'like' | 'comment' | 'follow' | 'unfollow' | 'follow_accept' | 'message' | 'post';
+export type NotificationType =
+  | 'like'
+  | 'comment'
+  | 'follow'
+  | 'unfollow'
+  | 'follow_accept'
+  | 'message'
+  | 'post'
+  | 'repost';
 
 @Schema({ timestamps: true })
 export class Notification {
@@ -16,7 +24,10 @@ export class Notification {
   @Prop({ required: true })
   senderName: string;
 
-  @Prop({ required: true, enum: ['like', 'comment', 'follow', 'unfollow', 'follow_accept', 'message', 'post'] })
+  @Prop({
+    required: true,
+    enum: ['like', 'comment', 'follow', 'unfollow', 'follow_accept', 'message', 'post', 'repost'],
+  })
   type: NotificationType;
 
   @Prop({ default: null })

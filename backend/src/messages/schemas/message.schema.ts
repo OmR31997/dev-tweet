@@ -14,6 +14,9 @@ export class Message {
   @Prop({ required: true, trim: true })
   content: string;
 
+  @Prop({ default: false })
+  delivered: boolean;
+
   @Prop({ default: false, index: true })
   read: boolean;
 }

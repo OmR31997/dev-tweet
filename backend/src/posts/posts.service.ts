@@ -28,6 +28,38 @@ export class PostsService {
     return this.postModel.find().sort({ createdAt: -1 }).limit(100).lean();
   }
 
+  findById(postId: string) {
+    return this.postModel.findById(postId).lean();
+  }
+
+  async adjustCommentCount(postId: string, delta: number) {
+    await this.postModel.updateOne({ _id: postId }, { $inc: { commentCount: delta } });
+  }
+
+  async update(
+    postId: string,
+    userId: string,
+    payload: { content?: string; tags?: string[]; imageIds?: string[] },
+  ) {
+    const post = await this.postModel.findById(postId).lean();
+    if (!post) throw new NotFoundException('Post not found');
+    if (post.authorId !== userId) throw new ForbiddenException('You can only edit your own posts');
+
+    const update: Record<string, unknown> = {};
+    if (typeof payload.content === 'string') {
+      update.content = payload.content;
+      update.tags = this.normalizeTags(payload.tags, payload.content);
+    } else if (payload.tags) {
+      update.tags = this.normalizeTags(payload.tags, post.content);
+    }
+    if (Array.isArray(payload.imageIds)) {
+      update.imageIds = payload.imageIds;
+    }
+
+    await this.postModel.updateOne({ _id: postId }, { $set: update });
+    return this.postModel.findById(postId).lean();
+  }
+
   async searchPosts(rawQuery: string, limit = 30) {
     const q = this.normalizeSearchQuery(rawQuery);
     if (!q) return [];
@@ -52,6 +84,43 @@ export class PostsService {
     }
     await this.postModel.updateOne({ _id: postId }, { $addToSet: { likes: userId } });
     return { liked: true };
+  }
+
+  /** Toggle a repost of `postId` by the user. Creates/removes a feed entry. */
+  async toggleRepost(postId: string, reposter: { userId: string; displayName?: string }) {
+    const source = await this.postModel.findById(postId).lean();
+    if (!source) throw new NotFoundException('Post not found');
+
+    // Repost the underlying original if the user reposts a repost.
+    const targetId = source.repostOf ?? postId;
+    const target = source.repostOf
+      ? await this.postModel.findById(targetId).lean()
+      : source;
+    if (!target) throw new NotFoundException('Post not found');
+
+    const existing = await this.postModel
+      .findOne({ repostOf: targetId, repostedById: reposter.userId })
+      .lean();
+
+    if (existing) {
+      await this.postModel.deleteOne({ _id: existing._id });
+      await this.postModel.updateOne({ _id: targetId }, { $pull: { reposts: reposter.userId } });
+      return { reposted: false, authorId: target.authorId };
+    }
+
+    await this.postModel.create({
+      authorId: target.authorId,
+      authorName: target.authorName,
+      authorPhoto: target.authorPhoto,
+      content: target.content,
+      imageIds: target.imageIds ?? [],
+      tags: target.tags ?? [],
+      repostOf: targetId,
+      repostedById: reposter.userId,
+      repostedByName: reposter.displayName ?? 'Developer',
+    });
+    await this.postModel.updateOne({ _id: targetId }, { $addToSet: { reposts: reposter.userId } });
+    return { reposted: true, authorId: target.authorId };
   }
 
   async deletePost(postId: string, userId: string) {

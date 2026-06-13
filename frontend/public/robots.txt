@@ -1,5 +1,0 @@
-# DevTweet Hub — allow indexing; update sitemap URL if you use a custom domain
-User-agent: *
-Allow: /
-
-Sitemap: https://devtweethub.web.app/sitemap.xml

@@ -9,6 +9,8 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { WsModule } from './ws/ws.module';
 import { EmailModule } from './email/email.module';
+import { EventsModule } from './events/events.module';
+import { CommentsModule } from './comments/comments.module';
 
 @Module({
   imports: [
@@ -19,10 +21,12 @@ import { EmailModule } from './email/email.module';
         uri: configService.get<string>('MONGODB_URI', 'mongodb://127.0.0.1:27017/devtweethub'),
       }),
     }),
+    EventsModule,
     AuthModule,
     UsersModule,
     PostsModule,
     MessagesModule,
+    CommentsModule,
     NotificationsModule,
     UploadsModule,
     WsModule,

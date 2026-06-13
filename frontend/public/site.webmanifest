@@ -1,20 +1,26 @@
 {
-  "name": "DevTweet Hub",
+  "name": "DevTweetHub",
   "short_name": "DevTweetHub",
-  "description": "Developer community feed, profiles, and DMs — campus energy for engineers.",
-  "categories": ["social", "news", "productivity"],
+  "description": "Developer community feed, profiles, and direct messages — where developers connect.",
+  "categories": ["social", "productivity"],
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#fffef8",
-  "theme_color": "#facc15",
+  "background_color": "#ffffff",
+  "theme_color": "#0abab5",
   "lang": "en",
   "icons": [
     {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/icon",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-icon",
+      "sizes": "180x180",
+      "type": "image/png",
       "purpose": "any"
     }
   ]

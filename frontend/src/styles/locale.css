@@ -1,0 +1,121 @@
+@layer components {
+  .locale-switcher {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .locale-switcher-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    padding: 4px 6px;
+    color: #111b21;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+
+  .locale-switcher-trigger:hover:not(:disabled) {
+    background: #f3f4f6;
+  }
+
+  .locale-switcher-trigger:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  .locale-switcher-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: #6b7280;
+  }
+
+  .locale-flag-wrap {
+    display: inline-flex;
+    width: 22px;
+    height: 16px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 2px;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 8%);
+  }
+
+  .locale-flag {
+    display: block;
+    width: 22px;
+    height: 16px;
+    max-width: 22px;
+    max-height: 16px;
+    object-fit: cover;
+  }
+
+  .locale-popover-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 100;
+    width: 152px;
+  }
+
+  .locale-popover {
+    margin: 0;
+    border-radius: 10px;
+    background: #fff;
+    padding: 4px;
+    list-style: none;
+    box-shadow:
+      0 2px 8px rgb(0 0 0 / 8%),
+      0 8px 20px rgb(0 0 0 / 12%);
+  }
+
+  .locale-popover li {
+    margin: 0;
+  }
+
+  .locale-popover-option {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    padding: 8px 10px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.2;
+    color: #111b21;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+
+  .locale-popover-option:hover:not(:disabled):not(.locale-popover-option--selected) {
+    background: #f3f4f6;
+  }
+
+  .locale-popover-option--selected {
+    background: var(--brand-primary, #0abab5);
+    color: #111b21;
+  }
+
+  .locale-popover-option--selected .locale-flag-wrap {
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 12%);
+  }
+
+  .locale-popover-label {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .locale-popover-option:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}

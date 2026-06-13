@@ -36,7 +36,10 @@ export class AuthService {
     });
 
     const session = await this.createSession(user);
-    await this.emailService.sendWelcomeEmail(user.email, user.displayName);
+    // Fire-and-forget — don't block the signup response on the email provider.
+    void this.emailService
+      .sendWelcomeEmail(user.email, user.displayName)
+      .catch(() => undefined);
     return session;
   }
 

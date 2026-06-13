@@ -1,7 +1,8 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CreatePostDto } from './dto/create-post.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -48,9 +49,37 @@ export class PostsController {
     return post;
   }
 
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @CurrentUser() user: { userId: string },
+    @Body() payload: UpdatePostDto,
+  ) {
+    return this.postsService.update(id, user.userId, payload);
+  }
+
   @Post(':id/like')
   toggleLike(@Param('id') id: string, @CurrentUser() user: { userId: string }) {
     return this.postsService.toggleLike(id, user.userId);
+  }
+
+  @Post(':id/repost')
+  async toggleRepost(@Param('id') id: string, @CurrentUser() user: { userId: string }) {
+    const profile = await this.usersService.getById(user.userId);
+    const result = await this.postsService.toggleRepost(id, {
+      userId: user.userId,
+      displayName: profile?.displayName,
+    });
+    if (result.reposted && result.authorId && result.authorId !== user.userId) {
+      await this.notificationsService.create(
+        result.authorId,
+        user.userId,
+        profile?.displayName ?? 'Developer',
+        'repost',
+        id,
+      );
+    }
+    return { reposted: result.reposted };
   }
 
   @Delete(':id')

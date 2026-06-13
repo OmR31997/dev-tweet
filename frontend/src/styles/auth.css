@@ -1,0 +1,363 @@
+/* Figma auth screens — phone OTP login/signup */
+
+@layer components {
+  .auth-screen {
+    --auth-teal: var(--brand-primary);
+    --auth-teal-hover: var(--brand-primary-hover);
+    --auth-border: #e0e0e0;
+    --auth-text: #1a1a1a;
+    --auth-text-muted: #757575;
+    --auth-field-radius: 12px;
+
+    @apply relative flex min-h-screen items-center justify-center bg-white px-5 py-10;
+    background-image: url("/assets/images/screenbg.svg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  .auth-panel {
+    @apply mx-auto w-full max-w-[402px];
+  }
+
+  .auth-flow {
+    @apply relative w-full;
+  }
+
+  .auth-back-button {
+    @apply fixed left-5 top-5 z-30 inline-flex size-10 items-center justify-center rounded-xl border border-[#e0e0e0] bg-white text-[#1a1a1a] shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-colors hover:bg-[#f5f5f5] sm:left-6 sm:top-6;
+  }
+
+  .auth-flow-intro {
+    @apply mb-8 text-left;
+  }
+
+  .auth-flow-title {
+    @apply text-[22px] font-bold leading-tight tracking-tight text-[#1a1a1a];
+  }
+
+  .auth-flow-subtitle {
+    @apply mt-2 text-sm leading-relaxed text-[#757575];
+  }
+
+  .auth-fields {
+    @apply flex flex-col gap-4;
+  }
+
+  .auth-floating-field {
+    @apply relative rounded-[var(--auth-field-radius)] border border-[#e0e0e0] bg-white px-4 pb-3.5 pt-[22px];
+    min-height: 56px;
+  }
+
+  .auth-floating-label {
+    @apply pointer-events-none absolute left-4 top-0 -translate-y-1/2 bg-white px-1 text-xs leading-none text-[#757575];
+  }
+
+  .auth-floating-field--phone {
+    @apply border-[var(--auth-teal)];
+  }
+
+  .auth-floating-field--phone .auth-floating-label {
+    @apply font-medium text-[var(--auth-teal)];
+  }
+
+  .auth-country-picker {
+    @apply relative min-h-[22px];
+  }
+
+  .auth-country-picker-trigger {
+    @apply flex w-full min-h-[22px] cursor-pointer items-center justify-between gap-3 border-0 bg-transparent p-0 text-left;
+  }
+
+  .auth-country-value {
+    @apply flex min-w-0 items-center gap-2.5 text-[15px] font-normal text-[#1a1a1a];
+  }
+
+  .auth-country-name {
+    @apply min-w-0 truncate;
+  }
+
+  .auth-country-flag {
+    @apply shrink-0 text-lg leading-none;
+  }
+
+  .auth-country-chevron {
+    @apply size-[18px] shrink-0 text-[#9e9e9e];
+  }
+
+  .auth-country-picker-menu {
+    @apply absolute top-[calc(100%+8px)] right-0 left-0 z-50 flex max-h-[min(320px,50vh)] flex-col overflow-hidden rounded-xl border border-[#e0e0e0] bg-white shadow-[0_8px_28px_rgba(0,0,0,0.14)];
+  }
+
+  .auth-country-picker-search {
+    @apply flex shrink-0 items-center gap-2 border-b border-[#ececec] px-3 py-2.5;
+  }
+
+  .auth-country-picker-search-icon {
+    @apply size-4 shrink-0 text-[#9e9e9e];
+  }
+
+  .auth-country-picker-search-input {
+    @apply min-w-0 flex-1 border-0 bg-transparent text-[14px] text-[#1a1a1a] outline-none placeholder:text-[#9e9e9e];
+  }
+
+  .auth-country-picker-list {
+    @apply m-0 list-none overflow-y-auto overscroll-contain p-1;
+  }
+
+  .auth-country-picker-option {
+    @apply flex w-full cursor-pointer items-center gap-2.5 rounded-lg border-0 bg-transparent px-2.5 py-2 text-left transition-colors hover:bg-[#f5f5f5];
+  }
+
+  .auth-country-picker-option--selected {
+    @apply bg-[#e8f8f7];
+  }
+
+  .auth-country-picker-option-flag {
+    @apply shrink-0 text-base leading-none;
+  }
+
+  .auth-country-picker-option-text {
+    @apply flex min-w-0 flex-1 flex-col gap-0.5;
+  }
+
+  .auth-country-picker-option-name {
+    @apply truncate text-[14px] text-[#1a1a1a];
+  }
+
+  .auth-country-picker-option-dial {
+    @apply text-[12px] text-[#757575];
+  }
+
+  .auth-country-picker-option-check {
+    @apply size-4 shrink-0 text-[var(--auth-teal)];
+  }
+
+  .auth-country-picker-empty {
+    @apply m-0 px-3 py-4 text-center text-[13px] text-[#757575];
+  }
+
+  .auth-phone-input {
+    @apply flex min-h-[22px] items-center gap-3;
+  }
+
+  .auth-phone-prefix {
+    @apply shrink-0 text-[15px] font-normal text-[#1a1a1a];
+  }
+
+  .auth-phone-divider {
+    @apply h-[22px] w-px shrink-0 bg-[#e0e0e0];
+  }
+
+  .auth-phone-input input {
+    @apply min-w-0 flex-1 border-0 bg-transparent text-[15px] text-[#1a1a1a] outline-none placeholder:text-[#bdbdbd];
+  }
+
+  .auth-divider {
+    @apply relative my-6 text-center;
+  }
+
+  .auth-divider::before {
+    content: "";
+    @apply absolute inset-x-0 top-1/2 border-t border-dotted border-[#d0d0d0];
+  }
+
+  .auth-divider span {
+    @apply relative inline-block bg-white px-3 text-xs font-normal uppercase tracking-wide text-[#9e9e9e];
+  }
+
+  .auth-google-button {
+    @apply flex h-12 w-full items-center justify-center gap-2.5 rounded-[var(--auth-field-radius)] border border-[#e0e0e0] bg-white text-[15px] font-normal text-[#1a1a1a] shadow-none transition-colors hover:bg-[#fafafa];
+  }
+
+  .auth-terms {
+    @apply mt-5 text-center text-xs leading-relaxed text-[#757575];
+  }
+
+  .auth-terms a {
+    @apply text-[#757575] underline-offset-2 hover:underline;
+  }
+
+  /* Shared primary CTA — works on auth, onboard, and anywhere else */
+  .auth-primary-button {
+    @apply mt-6 inline-flex h-14 min-h-14 w-full items-center justify-center rounded-xl border-0 bg-[var(--brand-primary)] px-4 text-lg font-semibold leading-normal text-white no-underline shadow-none transition-colors hover:bg-[var(--brand-primary-hover)] active:bg-[var(--brand-primary-hover)] disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .auth-error {
+    @apply mt-4 text-center text-sm text-destructive;
+  }
+
+  .auth-alt-link {
+    @apply mt-6 text-center text-sm text-[#757575];
+  }
+
+  .auth-alt-link a {
+    @apply font-semibold text-[var(--auth-teal)] hover:underline;
+  }
+
+  /* OTP step */
+  .auth-flow-intro--center {
+    @apply text-center;
+  }
+
+  .auth-flow-phone-display {
+    @apply mt-3 text-lg font-semibold tracking-wide text-[var(--auth-teal)];
+  }
+
+  .auth-otp-grid {
+    @apply grid gap-2.5 sm:gap-3;
+  }
+
+  .auth-otp-box {
+    @apply aspect-square w-full rounded-[var(--auth-field-radius)] border border-[#e0e0e0] bg-white text-center text-xl font-bold text-[#1a1a1a] shadow-none outline-none transition-[border-color,box-shadow];
+  }
+
+  .auth-otp-box:focus {
+    @apply border-[var(--auth-teal)] ring-2 ring-[var(--auth-teal)]/20;
+  }
+
+  .auth-otp-box::placeholder {
+    @apply text-[#bdbdbd];
+  }
+
+  .auth-resend-block {
+    @apply mt-6 text-center;
+  }
+
+  .auth-resend-prompt {
+    @apply text-[15px] font-semibold text-[#1a1a1a];
+  }
+
+  .auth-resend-timer {
+    @apply mt-1 text-sm text-[#757575];
+  }
+
+  .auth-resend-action {
+    @apply mt-1 text-sm font-semibold text-[var(--auth-teal)] hover:underline disabled:opacity-50;
+  }
+
+  /* Confirm number modal (Figma — compact) */
+  .auth-dialog-overlay {
+    @apply fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6 backdrop-blur-[1px];
+  }
+
+  .auth-dialog {
+    --auth-dialog-teal: var(--brand-primary);
+    --auth-dialog-edit: #c05e4e;
+
+    @apply flex w-full max-w-[min(100%,400px)] flex-col gap-4 rounded-[24px] bg-white px-5 py-5 text-left shadow-[0_8px_32px_rgba(0,0,0,0.12)];
+  }
+
+  .auth-dialog-copy {
+    @apply flex w-full flex-col items-start gap-0 text-left;
+  }
+
+  .auth-dialog-title {
+    @apply m-0 text-left text-lg font-bold leading-snug text-[#1a1a1a];
+  }
+
+  .auth-dialog-subtitle {
+    @apply mt-1 text-left text-[13px] font-normal leading-snug text-[#757575];
+  }
+
+  .auth-dialog-phone {
+    @apply mt-4 block w-full text-left text-[22px] font-bold leading-tight text-[#1a1a1a];
+  }
+
+  .auth-dialog-actions {
+    @apply flex gap-2.5;
+  }
+
+  .auth-dialog-edit {
+    @apply flex h-10 min-w-0 flex-1 items-center justify-center rounded-xl border border-[var(--auth-dialog-edit)] bg-white text-sm font-bold text-[var(--auth-dialog-edit)] transition-colors hover:bg-[#fdf6f4] disabled:opacity-50;
+  }
+
+  .auth-dialog-yes {
+    @apply flex h-10 min-w-0 flex-1 items-center justify-center rounded-xl border-0 bg-[var(--auth-dialog-teal)] text-sm font-bold text-white transition-colors hover:bg-[var(--brand-primary-hover)] disabled:opacity-50;
+  }
+
+  /* Signup steps after OTP */
+  .signup-step {
+    @apply flex w-full flex-col gap-8 pt-2;
+  }
+
+  .signup-step-title {
+    @apply text-[22px] font-bold leading-tight text-[#1a1a1a];
+  }
+
+  .signup-step-title--center {
+    @apply text-center;
+  }
+
+  .signup-gender-block {
+    @apply flex flex-col gap-4;
+  }
+
+  .signup-gender-grid {
+    @apply grid grid-cols-3 gap-3 sm:gap-5;
+  }
+
+  .signup-gender-option {
+    @apply flex flex-col items-center gap-3 border-0 bg-transparent p-0 text-center;
+  }
+
+  .signup-gender-icon-wrap {
+    @apply flex size-[88px] items-center justify-center rounded-full border-2 border-[#e0e0e0] bg-white transition-colors sm:size-[96px];
+  }
+
+  .signup-gender-icon-wrap--selected {
+    @apply border-[var(--brand-primary)];
+  }
+
+  .signup-gender-icon {
+    @apply size-[72px] sm:size-[77px];
+  }
+
+  .signup-gender-icon--muted {
+    filter: grayscale(1) brightness(0.35);
+  }
+
+  .signup-gender-label {
+    @apply text-xs font-normal text-[#1a1a1a] sm:text-sm;
+  }
+
+  .signup-avatar-block {
+    @apply flex justify-center pb-2;
+  }
+
+  .signup-avatar-wrap {
+    @apply relative inline-flex size-32 sm:size-36;
+  }
+
+  .signup-avatar {
+    @apply size-full rounded-full border-0 bg-transparent p-0;
+  }
+
+  .signup-avatar-media {
+    @apply block size-full overflow-hidden rounded-full;
+  }
+
+  .signup-avatar-placeholder {
+    @apply block size-full bg-[#e8e8e8];
+  }
+
+  .signup-avatar-camera {
+    @apply absolute bottom-0 right-0 z-10 flex size-10 items-center justify-center rounded-full border-2 border-[var(--brand-primary)] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)];
+  }
+
+  .signup-avatar-camera-icon {
+    @apply size-5 shrink-0;
+  }
+
+  .signup-profile-fields {
+    @apply flex flex-col gap-4;
+  }
+
+  .signup-profile-fields .auth-primary-button {
+    @apply mt-0;
+  }
+
+  .signup-display-name-input {
+    @apply min-h-[22px] w-full border-0 bg-transparent text-[15px] text-[#1a1a1a] outline-none placeholder:text-[#bdbdbd];
+  }
+}
