@@ -23,6 +23,19 @@ export interface NavItem {
   badge?: number;
 }
 
+/** Learning resources grouped under the mobile Tools tab. */
+export const MOBILE_TOOL_NAV_IDS = ["roadmaps", "course", "learn-git"] as const;
+
+/** Mobile bottom bar order — `tools` opens the learning submenu. */
+export const MOBILE_NAV_ORDER = [
+  "feed",
+  "explore",
+  "tools",
+  "notifications",
+  "messages",
+  "profile",
+] as const;
+
 /** Shared navigation items used by the desktop rail and mobile tab bar. */
 export function useNavItems(): NavItem[] {
   const t = useTranslations("Nav");
