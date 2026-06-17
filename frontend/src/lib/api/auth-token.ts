@@ -14,7 +14,7 @@ export function hasAuthToken(): boolean {
 }
 
 /** Decode a JWT payload (no verification). Browser-safe base64url. */
-function decodeJwtPayload(token: string): Record<string, unknown> | null {
+export function decodeJwtPayload(token: string): Record<string, unknown> | null {
   const part = token.split(".")[1];
   if (!part) return null;
   try {
@@ -39,6 +39,17 @@ export function getCurrentUserId(): string | null {
   const payload = decodeJwtPayload(token);
   const sub = payload?.sub ?? payload?.user_id ?? payload?.userId;
   return sub ? String(sub) : null;
+}
+
+/** True when the access token is missing `exp` or is within `skewSeconds` of expiry. */
+export function isAccessTokenExpired(
+  token: string,
+  skewSeconds = 30,
+): boolean {
+  const payload = decodeJwtPayload(token);
+  const exp = payload?.exp;
+  if (typeof exp !== "number") return false;
+  return Date.now() >= exp * 1000 - skewSeconds * 1000;
 }
 
 export { AUTH_TOKEN_KEY };

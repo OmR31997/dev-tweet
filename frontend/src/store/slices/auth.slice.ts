@@ -55,7 +55,7 @@ export const useAuthStore = create<AuthStore>()(
         if (!error && state?.accessToken) {
           syncTokenToStorage(state.accessToken);
         }
-        state?.setHasHydrated(true);
+        useAuthStore.getState().setHasHydrated(true);
       },
     }
   )

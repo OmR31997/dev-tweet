@@ -6,9 +6,11 @@ import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { getErrorMessage, useLogin } from "@/lib/api";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 export function LoginForm() {
+  const t = useTranslations("Auth");
   const login = useLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,7 +23,7 @@ export function LoginForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t("email")}</Label>
         <Input
           id="email"
           type="email"
@@ -29,18 +31,18 @@ export function LoginForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
+          placeholder={t("emailPlaceholder")}
         />
       </div>
 
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t("password")}</Label>
           <Link
             href="/forgot-password"
             className="text-xs text-primary hover:underline"
           >
-            Forgot password?
+            {t("forgotPassword")}
           </Link>
         </div>
         <PasswordInput
@@ -49,7 +51,7 @@ export function LoginForm() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••"
+          placeholder={t("passwordPlaceholder")}
         />
       </div>
 
@@ -60,7 +62,7 @@ export function LoginForm() {
       ) : null}
 
       <Button type="submit" className="w-full" disabled={login.isPending}>
-        {login.isPending ? "Signing in…" : "Sign in"}
+        {login.isPending ? t("signingIn") : t("loginSubmit")}
       </Button>
     </form>
   );

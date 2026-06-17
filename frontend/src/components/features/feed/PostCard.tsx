@@ -1,9 +1,9 @@
 "use client";
 
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { OptionsMenu } from "@/components/common/OptionsMenu";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import {
-  resolveImageUrl,
   useDeletePost,
   useToggleLike,
   useToggleRepost,
@@ -15,7 +15,6 @@ import { useAuthUser } from "@/store";
 import {
   Heart,
   MessageCircle,
-  MoreHorizontal,
   Pencil,
   Repeat2,
   Trash2,
@@ -25,8 +24,82 @@ import { useState } from "react";
 import { CommentsSection } from "./CommentsSection";
 import { EditPostDialog } from "./EditPostDialog";
 import { PostContent } from "./PostContent";
+import { PostMedia } from "./PostMedia";
+import { RepostDialog } from "./RepostDialog";
 
-export function PostCard({ post }: { post: Post }) {
+function PostActions({
+  post,
+  liked,
+  reposted,
+  showComments,
+  onToggleLike,
+  onToggleComments,
+  onRepostClick,
+  likePending,
+  repostPending,
+}: {
+  post: Post;
+  liked: boolean;
+  reposted: boolean;
+  showComments: boolean;
+  onToggleLike: () => void;
+  onToggleComments: () => void;
+  onRepostClick: () => void;
+  likePending: boolean;
+  repostPending: boolean;
+}) {
+  return (
+    <div className="mt-3 flex items-center gap-6 text-sm text-muted-foreground">
+      <button
+        type="button"
+        onClick={onToggleLike}
+        disabled={likePending}
+        className={cn(
+          "flex items-center gap-1.5 transition-colors hover:text-destructive",
+          liked && "text-destructive",
+        )}
+      >
+        <Heart className={cn("size-4", liked && "fill-current")} />
+        {post.likes.length > 0 ? post.likes.length : null}
+      </button>
+
+      <button
+        type="button"
+        onClick={onToggleComments}
+        className={cn(
+          "flex items-center gap-1.5 transition-colors hover:text-primary",
+          showComments && "text-primary",
+        )}
+      >
+        <MessageCircle className="size-4" />
+        {post.commentCount > 0 ? post.commentCount : "Comment"}
+      </button>
+
+      <button
+        type="button"
+        onClick={onRepostClick}
+        disabled={repostPending}
+        className={cn(
+          "flex items-center gap-1.5 transition-colors hover:text-green-600",
+          reposted && "text-green-600",
+        )}
+      >
+        <Repeat2 className="size-4" />
+        {post.reposts.length > 0 ? post.reposts.length : "Repost"}
+      </button>
+    </div>
+  );
+}
+
+export function PostCard({
+  post,
+  commentsOpen,
+  onToggleComments,
+}: {
+  post: Post;
+  commentsOpen: boolean;
+  onToggleComments: () => void;
+}) {
   const me = useAuthUser();
   const toggleLike = useToggleLike();
   const toggleRepost = useToggleRepost();
@@ -35,46 +108,151 @@ export function PostCard({ post }: { post: Post }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [showComments, setShowComments] = useState(false);
+  const [repostDialogOpen, setRepostDialogOpen] = useState(false);
 
   const liked = me ? post.likes.includes(me.id) : false;
-  const reposted = me ? post.reposts.includes(me.id) : false;
   const isRepost = Boolean(post.repostOf);
+  const reposted = me
+    ? post.reposts.includes(me.id) ||
+      (isRepost && post.repostedById === me.id)
+    : false;
   const canManage = me?.id === post.authorId && !isRepost;
+  const isOwnRepost = isRepost && post.repostedById === me?.id;
+
+  const handleRepostClick = () => {
+    if (reposted) {
+      toggleRepost.mutate({ id: post.id });
+      return;
+    }
+    setRepostDialogOpen(true);
+  };
+
+  if (isRepost) {
+    const reposterId = post.repostedById ?? "";
+    const reposterName =
+      post.repostedById === me?.id
+        ? "You"
+        : post.repostedByName || "User";
+    const reposterPhoto =
+      post.repostedByPhoto ||
+      (post.repostedById === me?.id ? me?.photoURL : undefined);
+
+    return (
+      <article
+        className="border-b border-border bg-card"
+        data-post-comments={post.id}
+      >
+        <div className="flex gap-3 px-5 py-4">
+          {reposterId ? (
+            <Link href={`/profile/${reposterId}`} className="shrink-0">
+              <UserAvatar
+                name={post.repostedByName || reposterName}
+                photoURL={reposterPhoto}
+              />
+            </Link>
+          ) : (
+            <UserAvatar
+              name={post.repostedByName || reposterName}
+              photoURL={reposterPhoto}
+            />
+          )}
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              {reposterId ? (
+                <Link
+                  href={`/profile/${reposterId}`}
+                  className="truncate font-semibold hover:underline"
+                >
+                  {reposterName}
+                </Link>
+              ) : (
+                <span className="truncate font-semibold">{reposterName}</span>
+              )}
+              <span className="text-sm text-muted-foreground">
+                · {timeAgo(post.createdAt)}
+              </span>
+
+              {isOwnRepost ? (
+                <OptionsMenu
+                  open={menuOpen}
+                  onToggle={() => setMenuOpen((o) => !o)}
+                  onClose={() => setMenuOpen(false)}
+                  items={[
+                    {
+                      label: "Remove repost",
+                      icon: <Trash2 className="size-4" />,
+                      destructive: true,
+                      onClick: () => {
+                        setMenuOpen(false);
+                        toggleRepost.mutate({ id: post.id });
+                      },
+                    },
+                  ]}
+                />
+              ) : null}
+            </div>
+
+            {post.repostCaption ? (
+              <div className="mt-1">
+                <PostContent content={post.repostCaption} />
+              </div>
+            ) : null}
+
+            <div className="mt-3 overflow-hidden rounded-xl border border-border bg-muted/30">
+              <div className="flex gap-2.5 p-3">
+                <Link href={`/profile/${post.authorId}`} className="shrink-0">
+                  <UserAvatar
+                    name={post.authorName}
+                    photoURL={post.authorPhoto}
+                    className="size-9"
+                  />
+                </Link>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/profile/${post.authorId}`}
+                      className="truncate text-sm font-semibold hover:underline"
+                    >
+                      {post.authorName}
+                    </Link>
+                  </div>
+                  <PostContent content={post.content} />
+                  <PostMedia post={post} compact />
+                </div>
+              </div>
+            </div>
+
+            <PostActions
+              post={post}
+              liked={liked}
+              reposted={reposted}
+              showComments={commentsOpen}
+              likePending={toggleLike.isPending}
+              repostPending={toggleRepost.isPending}
+              onToggleLike={() => toggleLike.mutate(post.id)}
+              onToggleComments={onToggleComments}
+              onRepostClick={handleRepostClick}
+            />
+          </div>
+        </div>
+
+        {commentsOpen ? <CommentsSection post={post} /> : null}
+
+        <RepostDialog
+          post={post}
+          open={repostDialogOpen}
+          onClose={() => setRepostDialogOpen(false)}
+        />
+      </article>
+    );
+  }
 
   return (
-    <article className="border-b border-border bg-card">
-      {isRepost && post.repostedByName ? (
-        <div className="flex items-center gap-1.5 px-5 pt-3 text-xs font-medium text-muted-foreground">
-          <Repeat2 className="size-3.5" />
-          {post.repostedById === me?.id ? (
-            <span>You reposted</span>
-          ) : (
-            <span>
-              <Link
-                href={`/profile/${post.repostedById}`}
-                className="font-semibold hover:underline"
-              >
-                {post.repostedByName}
-              </Link>{" "}
-              reposted
-            </span>
-          )}
-          {post.repostedById === me?.id ? (
-            <button
-              type="button"
-              onClick={() => toggleRepost.mutate(post.id)}
-              disabled={toggleRepost.isPending}
-              className="ml-auto flex items-center gap-1 text-muted-foreground transition-colors hover:text-destructive"
-              aria-label="Remove repost"
-            >
-              <Trash2 className="size-3.5" />
-              Remove
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-
+    <article
+      className="border-b border-border bg-card"
+      data-post-comments={post.id}
+    >
       <div className="flex gap-3 px-5 py-4">
         <Link href={`/profile/${post.authorId}`} className="shrink-0">
           <UserAvatar name={post.authorName} photoURL={post.authorPhoto} />
@@ -93,48 +271,30 @@ export function PostCard({ post }: { post: Post }) {
             </span>
 
             {canManage ? (
-              <div className="relative ml-auto">
-                <button
-                  type="button"
-                  onClick={() => setMenuOpen((o) => !o)}
-                  aria-label="Post options"
-                  className="grid size-8 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                >
-                  <MoreHorizontal className="size-5" />
-                </button>
-                {menuOpen ? (
-                  <>
-                    <div
-                      className="fixed inset-0 z-10"
-                      onClick={() => setMenuOpen(false)}
-                    />
-                    <div className="absolute right-0 top-full z-20 mt-1 w-40 overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMenuOpen(false);
-                          setEditing(true);
-                        }}
-                        className="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
-                      >
-                        <Pencil className="size-4" />
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMenuOpen(false);
-                          setConfirmOpen(true);
-                        }}
-                        className="flex w-full items-center gap-3 border-t border-border px-3 py-2.5 text-sm font-medium text-destructive transition-colors hover:bg-accent"
-                      >
-                        <Trash2 className="size-4" />
-                        Delete
-                      </button>
-                    </div>
-                  </>
-                ) : null}
-              </div>
+              <OptionsMenu
+                open={menuOpen}
+                onToggle={() => setMenuOpen((o) => !o)}
+                onClose={() => setMenuOpen(false)}
+                items={[
+                  {
+                    label: "Edit",
+                    icon: <Pencil className="size-4" />,
+                    onClick: () => {
+                      setMenuOpen(false);
+                      setEditing(true);
+                    },
+                  },
+                  {
+                    label: "Delete",
+                    icon: <Trash2 className="size-4" />,
+                    destructive: true,
+                    onClick: () => {
+                      setMenuOpen(false);
+                      setConfirmOpen(true);
+                    },
+                  },
+                ]}
+              />
             ) : null}
           </div>
 
@@ -142,73 +302,34 @@ export function PostCard({ post }: { post: Post }) {
             <PostContent content={post.content} />
           </div>
 
-          {post.imageIds.length > 0 ? (
-            <div
-              className={cn(
-                "mt-3 grid gap-2 overflow-hidden rounded-xl",
-                post.imageIds.length === 1 ? "grid-cols-1" : "grid-cols-2"
-              )}
-            >
-              {post.imageIds.map((id) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={id}
-                  src={resolveImageUrl(id)}
-                  alt=""
-                  className="max-h-96 w-full rounded-xl border border-border object-cover"
-                />
-              ))}
-            </div>
-          ) : null}
+          <PostMedia post={post} />
 
-          <div className="mt-3 flex items-center gap-6 text-sm text-muted-foreground">
-            <button
-              type="button"
-              onClick={() => toggleLike.mutate(post.id)}
-              disabled={toggleLike.isPending}
-              className={cn(
-                "flex items-center gap-1.5 transition-colors hover:text-destructive",
-                liked && "text-destructive"
-              )}
-            >
-              <Heart className={cn("size-4", liked && "fill-current")} />
-              {post.likes.length > 0 ? post.likes.length : null}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowComments((s) => !s)}
-              className={cn(
-                "flex items-center gap-1.5 transition-colors hover:text-primary",
-                showComments && "text-primary"
-              )}
-            >
-              <MessageCircle className="size-4" />
-              {post.commentCount > 0 ? post.commentCount : "Comment"}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => toggleRepost.mutate(post.id)}
-              disabled={toggleRepost.isPending}
-              className={cn(
-                "flex items-center gap-1.5 transition-colors hover:text-green-600",
-                reposted && "text-green-600"
-              )}
-            >
-              <Repeat2 className="size-4" />
-              {post.reposts.length > 0 ? post.reposts.length : "Repost"}
-            </button>
-          </div>
+          <PostActions
+            post={post}
+            liked={liked}
+            reposted={reposted}
+            showComments={commentsOpen}
+            likePending={toggleLike.isPending}
+            repostPending={toggleRepost.isPending}
+            onToggleLike={() => toggleLike.mutate(post.id)}
+            onToggleComments={onToggleComments}
+            onRepostClick={handleRepostClick}
+          />
         </div>
       </div>
 
-      {showComments ? <CommentsSection post={post} /> : null}
+      {commentsOpen ? <CommentsSection post={post} /> : null}
 
       <EditPostDialog
         post={post}
         open={editing}
         onClose={() => setEditing(false)}
+      />
+
+      <RepostDialog
+        post={post}
+        open={repostDialogOpen}
+        onClose={() => setRepostDialogOpen(false)}
       />
 
       <ConfirmDialog

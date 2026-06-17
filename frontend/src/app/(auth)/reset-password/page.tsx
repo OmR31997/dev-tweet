@@ -1,14 +1,13 @@
 import { AuthCard, ResetPasswordForm } from "@/components/features/auth";
-import { createPageMetadata } from "@/lib/seo/metadata";
+import { createUtilityPageMetadata } from "@/lib/seo/metadata";
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
-export const metadata: Metadata = createPageMetadata({
+export const metadata: Metadata = createUtilityPageMetadata({
   title: "Reset password",
   path: "/reset-password",
-  noIndex: true,
 });
 
 export default function ResetPasswordPage() {

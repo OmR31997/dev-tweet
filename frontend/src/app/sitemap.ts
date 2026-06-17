@@ -6,7 +6,6 @@ const PUBLIC_ROUTES = [
   { path: "", changeFrequency: "weekly" as const, priority: 1 },
   { path: "/login", changeFrequency: "monthly" as const, priority: 0.7 },
   { path: "/register", changeFrequency: "monthly" as const, priority: 0.8 },
-  { path: "/forgot-password", changeFrequency: "yearly" as const, priority: 0.3 },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

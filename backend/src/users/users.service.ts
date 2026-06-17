@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
@@ -20,6 +20,36 @@ export class UsersService {
 
   async getById(userId: string) {
     return this.userModel.findById(userId).select('-password -refreshTokenHash').lean();
+  }
+
+  async getByIds(userIds: string[]) {
+    if (userIds.length === 0) return [];
+    return this.userModel
+      .find({ _id: { $in: userIds } })
+      .select('-password -refreshTokenHash')
+      .lean();
+  }
+
+  async getFollowers(userId: string) {
+    const user = await this.getById(userId);
+    if (!user) throw new NotFoundException('User not found');
+    const ids = user.followers ?? [];
+    if (ids.length === 0) return [];
+    return this.userModel
+      .find({ _id: { $in: ids } })
+      .select('-password -refreshTokenHash')
+      .lean();
+  }
+
+  async getFollowing(userId: string) {
+    const user = await this.getById(userId);
+    if (!user) throw new NotFoundException('User not found');
+    const ids = user.following ?? [];
+    if (ids.length === 0) return [];
+    return this.userModel
+      .find({ _id: { $in: ids } })
+      .select('-password -refreshTokenHash')
+      .lean();
   }
 
   async listUsers(excludeId?: string) {
@@ -49,10 +79,15 @@ export class UsersService {
   }
 
   async toggleFollow(currentUserId: string, targetUserId: string) {
+    if (currentUserId === targetUserId) {
+      throw new BadRequestException('You cannot follow yourself');
+    }
+
     const me = await this.userModel.findById(currentUserId).lean();
-    if (!me) return { following: false };
+    if (!me) return { following: false, followsYou: false };
     const targetUser = await this.userModel.findById(targetUserId).lean();
-    if (!targetUser) return { following: false };
+    if (!targetUser) throw new NotFoundException('User not found');
+
     const already = me.following?.includes(targetUserId);
     if (already) {
       await this.userModel.updateOne(
@@ -69,11 +104,21 @@ export class UsersService {
         me.displayName,
         'unfollow',
       );
-      return { following: false };
+      return {
+        following: false,
+        followsYou: targetUser.following?.includes(currentUserId) ?? false,
+      };
     }
+
     const isFollowBack = targetUser.following?.includes(currentUserId);
-    await this.userModel.updateOne({ _id: currentUserId }, { $addToSet: { following: targetUserId } });
-    await this.userModel.updateOne({ _id: targetUserId }, { $addToSet: { followers: currentUserId } });
+    await this.userModel.updateOne(
+      { _id: currentUserId },
+      { $addToSet: { following: targetUserId } },
+    );
+    await this.userModel.updateOne(
+      { _id: targetUserId },
+      { $addToSet: { followers: currentUserId } },
+    );
     await this.notificationsService.create(
       targetUserId,
       currentUserId,
@@ -85,9 +130,13 @@ export class UsersService {
         targetUser.email,
         targetUser.displayName,
         me.displayName,
+        currentUserId,
       );
     }
-    return { following: true };
+    return {
+      following: true,
+      followsYou: isFollowBack,
+    };
   }
 
   private normalizeSearchQuery(raw: string) {

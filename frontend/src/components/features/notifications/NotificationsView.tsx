@@ -1,5 +1,6 @@
 "use client";
 
+import { FollowButton } from "@/components/common/FollowButton";
 import { PageHeader } from "@/components/common/PageHeader";
 import { QueryState } from "@/components/common/QueryState";
 import { UserAvatar } from "@/components/common/UserAvatar";
@@ -8,6 +9,7 @@ import {
   useClearNotifications,
   useMarkNotificationRead,
   useNotifications,
+  useUser,
   type AppNotification,
   type NotificationType,
 } from "@/lib/api";
@@ -15,17 +17,8 @@ import { timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Bell, Heart, MessageCircle, UserPlus } from "lucide-react";
 import Link from "next/link";
-
-const VERB: Record<NotificationType, string> = {
-  like: "liked your post",
-  comment: "commented on your post",
-  follow: "started following you",
-  unfollow: "unfollowed you",
-  follow_accept: "followed you back",
-  message: "sent you a message",
-  post: "shared a new post",
-  repost: "reposted your post",
-};
+import { useTranslations } from "next-intl";
+import { useAuthUser } from "@/store";
 
 function NotificationIcon({ type }: { type: NotificationType }) {
   if (type === "like")
@@ -44,7 +37,30 @@ function hrefFor(n: AppNotification): string {
   return "/feed";
 }
 
-function NotificationRow({ n }: { n: AppNotification }) {
+function NotificationFollowAction({
+  senderId,
+  type,
+}: {
+  senderId: string;
+  type: NotificationType;
+}) {
+  const me = useAuthUser();
+  const sender = useUser(type === "follow" ? senderId : undefined);
+
+  if (type !== "follow" || !me || me.id === senderId || !sender.data) {
+    return null;
+  }
+
+  return <FollowButton target={sender.data} hideWhenFollowing />;
+}
+
+function NotificationRow({
+  n,
+  verb,
+}: {
+  n: AppNotification;
+  verb: string;
+}) {
   const markRead = useMarkNotificationRead();
   return (
     <Link
@@ -54,10 +70,10 @@ function NotificationRow({ n }: { n: AppNotification }) {
       }}
       className={cn(
         "flex items-center gap-3 border-b border-border px-5 py-3.5 transition-colors hover:bg-accent/50",
-        !n.read && "bg-primary/5"
+        !n.read && "bg-primary/5",
       )}
     >
-      <div className="relative">
+      <div className="relative shrink-0">
         <UserAvatar name={n.senderName} />
         <span className="absolute -bottom-1 -right-1 grid size-5 place-items-center rounded-full border-2 border-card bg-card">
           <NotificationIcon type={n.type} />
@@ -65,8 +81,9 @@ function NotificationRow({ n }: { n: AppNotification }) {
       </div>
       <p className="min-w-0 flex-1 text-sm">
         <span className="font-semibold">{n.senderName}</span>{" "}
-        <span className="text-muted-foreground">{VERB[n.type]}</span>
+        <span className="text-muted-foreground">{verb}</span>
       </p>
+      <NotificationFollowAction senderId={n.senderId} type={n.type} />
       <span className="shrink-0 text-xs text-muted-foreground">
         {timeAgo(n.createdAt)}
       </span>
@@ -78,14 +95,17 @@ function NotificationRow({ n }: { n: AppNotification }) {
 }
 
 export function NotificationsView() {
+  const t = useTranslations("Notifications");
   const notifications = useNotifications();
   const clear = useClearNotifications();
   const items = notifications.data ?? [];
 
+  const verbFor = (type: NotificationType) => t(type);
+
   return (
     <div className="mx-auto flex min-h-full max-w-2xl flex-col">
       <PageHeader
-        title="Notifications"
+        title={t("title")}
         actions={
           items.length > 0 ? (
             <Button
@@ -94,7 +114,7 @@ export function NotificationsView() {
               onClick={() => clear.mutate()}
               disabled={clear.isPending}
             >
-              Clear all
+              {t("clearAll")}
             </Button>
           ) : null
         }
@@ -105,13 +125,13 @@ export function NotificationsView() {
         isError={notifications.isError}
         error={notifications.error}
         isEmpty={items.length === 0}
-        loadingMessage="Loading notifications…"
-        emptyMessage="You're all caught up."
+        loadingMessage={t("loading")}
+        emptyMessage={t("caughtUp")}
         onRetry={() => notifications.refetch()}
       >
         <div>
           {items.map((n) => (
-            <NotificationRow key={n.id} n={n} />
+            <NotificationRow key={n.id} n={n} verb={verbFor(n.type)} />
           ))}
         </div>
       </QueryState>

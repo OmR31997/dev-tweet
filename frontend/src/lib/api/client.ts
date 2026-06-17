@@ -1,6 +1,5 @@
-import { AUTH_TOKEN_KEY } from "@/config/auth";
-import { getClientApiBaseUrl } from "@/config/env";
 import { authActions } from "@/store/action";
+import { getClientApiBaseUrl } from "@/config/env";
 import axios, { type InternalAxiosRequestConfig } from "axios";
 import { API_ENDPOINTS } from "./endpoints";
 import { toApiError } from "./errors";
@@ -22,9 +21,7 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
-    const token =
-      authActions.getAccessToken() ?? localStorage.getItem(AUTH_TOKEN_KEY);
-
+    const token = authActions.getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -51,7 +48,7 @@ export async function refreshAccessToken(): Promise<boolean> {
     const { data } = await axios.post(
       `${getClientApiBaseUrl()}${API_ENDPOINTS.auth.refresh}`,
       { refreshToken },
-      { timeout: 30_000 }
+      { timeout: 30_000 },
     );
     authActions.setSession(normalizeAuthResponse(data));
     return true;
@@ -62,6 +59,13 @@ export async function refreshAccessToken(): Promise<boolean> {
 
 /** De-duplicated refresh: concurrent 401s share one refresh round-trip. */
 let refreshPromise: Promise<boolean> | null = null;
+
+function sharedRefresh(): Promise<boolean> {
+  refreshPromise ??= refreshAccessToken().finally(() => {
+    refreshPromise = null;
+  });
+  return refreshPromise;
+}
 
 apiClient.interceptors.response.use(
   (response) => response,
@@ -78,9 +82,7 @@ apiClient.interceptors.response.use(
       !isAuthEndpoint(original.url)
     ) {
       original._retry = true;
-      refreshPromise ??= refreshAccessToken();
-      const refreshed = await refreshPromise;
-      refreshPromise = null;
+      const refreshed = await sharedRefresh();
 
       if (refreshed) {
         const token = authActions.getAccessToken();
@@ -94,5 +96,5 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(toApiError(error));
-  }
+  },
 );

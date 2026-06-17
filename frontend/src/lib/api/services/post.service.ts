@@ -4,6 +4,7 @@ import { normalizePost, normalizePosts } from "../normalizers";
 import type {
   CreatePostDto,
   Post,
+  RepostPostDto,
   UpdatePostDto,
   UploadResult,
 } from "../types";
@@ -34,8 +35,11 @@ export const postService = {
   },
 
   /** Toggle repost. Returns the new reposted state. */
-  async toggleRepost(id: string): Promise<{ reposted: boolean }> {
-    const { data } = await apiClient.post(API_ENDPOINTS.posts.repost(id));
+  async toggleRepost(
+    id: string,
+    dto?: RepostPostDto,
+  ): Promise<{ reposted: boolean }> {
+    const { data } = await apiClient.post(API_ENDPOINTS.posts.repost(id), dto ?? {});
     return { reposted: Boolean((data as { reposted?: boolean })?.reposted) };
   },
 

@@ -14,10 +14,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 /** Left navigation rail — shown on tablet/desktop (md+). */
 export function ChatNavRail() {
+  const t = useTranslations("Nav");
+  const tc = useTranslations("Common");
   const pathname = usePathname();
   const logout = useLogout();
   const user = useAuthUser();
@@ -60,7 +63,7 @@ export function ChatNavRail() {
                   </span>
                 ) : null}
               </span>
-              {item.label === "Alerts" ? "Notifications" : item.label}
+              {item.label}
             </Link>
           );
         })}
@@ -80,7 +83,7 @@ export function ChatNavRail() {
                 className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
               >
                 <UserIcon className="size-4" />
-                View profile
+                {t("viewProfile")}
               </Link>
               <Link
                 href="/settings"
@@ -88,7 +91,7 @@ export function ChatNavRail() {
                 className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
               >
                 <Settings className="size-4" />
-                Settings
+                {t("settings")}
               </Link>
               <button
                 type="button"
@@ -100,7 +103,7 @@ export function ChatNavRail() {
                 className="flex w-full items-center gap-3 border-t border-border px-3 py-2.5 text-sm font-medium text-destructive transition-colors hover:bg-accent"
               >
                 <LogOut className="size-4" />
-                Sign out
+                {t("signOut")}
               </button>
             </div>
           </>
@@ -120,7 +123,7 @@ export function ChatNavRail() {
           />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-medium">
-              {user?.displayName ?? "You"}
+              {user?.displayName ?? tc("you")}
             </span>
             <span className="block truncate text-xs text-muted-foreground">
               {user?.email}
@@ -132,10 +135,10 @@ export function ChatNavRail() {
 
       <ConfirmDialog
         open={confirmOpen}
-        title="Sign out?"
-        message="You'll need to sign in again to access your account."
-        confirmLabel="Sign out"
-        cancelLabel="Cancel"
+        title={t("signOutTitle")}
+        message={t("signOutMessage")}
+        confirmLabel={t("signOut")}
+        cancelLabel={t("cancel")}
         destructive
         busy={logout.isPending}
         onCancel={() => setConfirmOpen(false)}

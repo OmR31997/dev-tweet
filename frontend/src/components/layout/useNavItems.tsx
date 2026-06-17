@@ -5,10 +5,12 @@ import {
   Bell,
   Compass,
   Home,
+  Map,
   MessageCircle,
   User,
   type LucideIcon,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export interface NavItem {
   id: string;
@@ -21,23 +23,37 @@ export interface NavItem {
 
 /** Shared navigation items used by the desktop rail and mobile tab bar. */
 export function useNavItems(): NavItem[] {
+  const t = useTranslations("Nav");
   const unread = useUnreadMessageCount();
   const notifications = useNotifications();
   const unreadNotifications =
     notifications.data?.filter((n) => !n.read).length ?? 0;
 
   return [
-    { id: "feed", label: "Feed", href: "/feed", icon: Home, match: (p) => p === "/feed" },
+    {
+      id: "feed",
+      label: t("feed"),
+      href: "/feed",
+      icon: Home,
+      match: (p) => p === "/feed",
+    },
     {
       id: "explore",
-      label: "Explore",
+      label: t("explore"),
       href: "/explore",
       icon: Compass,
       match: (p) => p.startsWith("/explore"),
     },
     {
+      id: "roadmaps",
+      label: t("roadmaps"),
+      href: "/roadmaps",
+      icon: Map,
+      match: (p) => p.startsWith("/roadmaps"),
+    },
+    {
       id: "notifications",
-      label: "Alerts",
+      label: t("notifications"),
       href: "/notifications",
       icon: Bell,
       match: (p) => p.startsWith("/notifications"),
@@ -45,7 +61,7 @@ export function useNavItems(): NavItem[] {
     },
     {
       id: "messages",
-      label: "Messages",
+      label: t("messages"),
       href: "/messages",
       icon: MessageCircle,
       match: (p) => p.startsWith("/messages"),
@@ -53,7 +69,7 @@ export function useNavItems(): NavItem[] {
     },
     {
       id: "profile",
-      label: "Profile",
+      label: t("profile"),
       href: "/profile",
       icon: User,
       match: (p) => p.startsWith("/profile"),

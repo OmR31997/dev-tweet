@@ -6,6 +6,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useAccessToken } from "@/store/selector";
+import { realtimeRefetchInterval } from "../query-polling";
 import { queryKeys } from "../query-keys";
 import { notificationService } from "../services/notification.service";
 
@@ -15,7 +16,7 @@ export function useNotifications() {
     queryKey: queryKeys.notifications.list(),
     queryFn: () => notificationService.list(),
     enabled: Boolean(accessToken),
-    refetchInterval: 15_000,
+    refetchInterval: () => realtimeRefetchInterval(90_000),
   });
 }
 

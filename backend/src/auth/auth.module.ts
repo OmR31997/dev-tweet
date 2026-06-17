@@ -21,7 +21,13 @@ import { EmailModule } from '../email/email.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET', 'dev-secret'),
-        signOptions: { expiresIn: 900 },
+        signOptions: {
+          expiresIn:
+            Number.parseInt(
+              configService.get<string>('JWT_ACCESS_TTL_SECONDS', '900'),
+              10,
+            ) || 900,
+        },
       }),
     }),
   ],

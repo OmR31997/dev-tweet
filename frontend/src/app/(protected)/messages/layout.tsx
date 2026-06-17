@@ -5,7 +5,6 @@ import type { ReactNode } from "react";
 
 export const metadata: Metadata = createPrivatePageMetadata({
   title: "Messages",
-  path: "/messages",
 });
 
 export default function MessagesLayout({ children }: { children: ReactNode }) {

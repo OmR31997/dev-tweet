@@ -108,18 +108,16 @@ export function useLogout(options?: { redirectTo?: string }) {
   const redirectTo = options?.redirectTo ?? "/login";
 
   return useMutation({
-    onMutate: () => {
-      authActions.clearSession();
+    mutationFn: () => authService.logout(),
+    onSuccess: () => {
       queryClient.clear();
       uiActions.setActiveChatId(null);
       router.replace(redirectTo);
     },
-    mutationFn: async () => {
-      try {
-        await authService.logout();
-      } catch {
-        // Session cleared client-side; server sign-out is best-effort.
-      }
+    onError: () => {
+      queryClient.clear();
+      uiActions.setActiveChatId(null);
+      router.replace(redirectTo);
     },
   });
 }

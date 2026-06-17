@@ -20,6 +20,7 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: [
         ...PRIVATE_ROUTE_PREFIXES,
+        "/forgot-password",
         "/reset-password",
         "/api/",
       ],

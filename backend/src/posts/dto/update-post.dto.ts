@@ -1,4 +1,12 @@
-import { IsArray, IsOptional, IsString, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsOptional,
+  IsString,
+  MaxLength,
+  ValidateNested,
+} from 'class-validator';
+import { PostAttachmentDto } from './post-attachment.dto';
 
 export class UpdatePostDto {
   @IsOptional()
@@ -9,6 +17,12 @@ export class UpdatePostDto {
   @IsOptional()
   @IsArray()
   imageIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PostAttachmentDto)
+  attachments?: PostAttachmentDto[];
 
   @IsOptional()
   @IsArray()

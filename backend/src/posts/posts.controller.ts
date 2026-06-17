@@ -1,14 +1,16 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PostsService } from './posts.service';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { RepostPostDto } from './dto/repost-post.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
+@ApiTags('posts')
+@ApiBearerAuth('access-token')
 @Controller('posts')
-@UseGuards(JwtAuthGuard)
 export class PostsController {
   constructor(
     private readonly postsService: PostsService,
@@ -64,12 +66,21 @@ export class PostsController {
   }
 
   @Post(':id/repost')
-  async toggleRepost(@Param('id') id: string, @CurrentUser() user: { userId: string }) {
+  async toggleRepost(
+    @Param('id') id: string,
+    @CurrentUser() user: { userId: string },
+    @Body() payload: RepostPostDto,
+  ) {
     const profile = await this.usersService.getById(user.userId);
-    const result = await this.postsService.toggleRepost(id, {
-      userId: user.userId,
-      displayName: profile?.displayName,
-    });
+    const result = await this.postsService.toggleRepost(
+      id,
+      {
+        userId: user.userId,
+        displayName: profile?.displayName,
+        photoURL: profile?.photoURL,
+      },
+      payload?.caption,
+    );
     if (result.reposted && result.authorId && result.authorId !== user.userId) {
       await this.notificationsService.create(
         result.authorId,

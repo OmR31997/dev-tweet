@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Post, PostDocument } from './schemas/post.schema';
@@ -13,13 +13,20 @@ export class PostsService {
   ) {}
 
   async create(user: { userId: string; displayName?: string; photoURL?: string }, payload: CreatePostDto) {
-    const tags = this.normalizeTags(payload.tags, payload.content);
+    const imageIds = payload.imageIds ?? [];
+    const attachments = payload.attachments ?? [];
+    const content = payload.content?.trim() ?? '';
+    if (!content && imageIds.length === 0 && attachments.length === 0) {
+      throw new BadRequestException('Post must include text or media');
+    }
+    const tags = this.normalizeTags(payload.tags, content);
     return this.postModel.create({
       authorId: user.userId,
       authorName: user.displayName ?? 'Developer',
       authorPhoto: user.photoURL ?? '',
-      content: payload.content,
-      imageIds: payload.imageIds ?? [],
+      content,
+      imageIds,
+      attachments,
       tags,
     });
   }
@@ -39,7 +46,7 @@ export class PostsService {
   async update(
     postId: string,
     userId: string,
-    payload: { content?: string; tags?: string[]; imageIds?: string[] },
+    payload: { content?: string; tags?: string[]; imageIds?: string[]; attachments?: CreatePostDto['attachments'] },
   ) {
     const post = await this.postModel.findById(postId).lean();
     if (!post) throw new NotFoundException('Post not found');
@@ -54,6 +61,9 @@ export class PostsService {
     }
     if (Array.isArray(payload.imageIds)) {
       update.imageIds = payload.imageIds;
+    }
+    if (Array.isArray(payload.attachments)) {
+      update.attachments = payload.attachments;
     }
 
     await this.postModel.updateOne({ _id: postId }, { $set: update });
@@ -87,7 +97,11 @@ export class PostsService {
   }
 
   /** Toggle a repost of `postId` by the user. Creates/removes a feed entry. */
-  async toggleRepost(postId: string, reposter: { userId: string; displayName?: string }) {
+  async toggleRepost(
+    postId: string,
+    reposter: { userId: string; displayName?: string; photoURL?: string },
+    caption?: string,
+  ) {
     const source = await this.postModel.findById(postId).lean();
     if (!source) throw new NotFoundException('Post not found');
 
@@ -118,6 +132,8 @@ export class PostsService {
       repostOf: targetId,
       repostedById: reposter.userId,
       repostedByName: reposter.displayName ?? 'Developer',
+      repostedByPhoto: reposter.photoURL ?? '',
+      repostCaption: caption?.trim() ?? '',
     });
     await this.postModel.updateOne({ _id: targetId }, { $addToSet: { reposts: reposter.userId } });
     return { reposted: true, authorId: target.authorId };

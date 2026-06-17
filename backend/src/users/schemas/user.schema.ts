@@ -49,6 +49,9 @@ export class User {
 
   @Prop({ default: true })
   dailyDigestEnabled: boolean;
+
+  @Prop({ type: Date, default: null })
+  lastSeenAt?: Date | null;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

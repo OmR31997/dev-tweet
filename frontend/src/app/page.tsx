@@ -1,12 +1,17 @@
 import { HomePageView } from "@/components/features/home";
-import { site } from "@/config/site";
 import { createPageMetadata } from "@/lib/seo/metadata";
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
-export const metadata: Metadata = createPageMetadata({
-  description: site.description,
-  path: "/",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("HomePage");
+
+  return createPageMetadata({
+    title: t("metaTitle"),
+    description: t("metaDescription"),
+    path: "/",
+  });
+}
 
 export default function Home() {
   return <HomePageView />;

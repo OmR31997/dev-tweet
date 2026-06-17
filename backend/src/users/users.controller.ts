@@ -1,13 +1,18 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UsersService } from './users.service';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { PresenceService } from '../events/presence.service';
 
+@ApiTags('users')
+@ApiBearerAuth('access-token')
 @Controller('users')
-@UseGuards(JwtAuthGuard)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly presenceService: PresenceService,
+  ) {}
 
   @Get('me')
   me(@CurrentUser() user: { userId: string }) {
@@ -25,6 +30,26 @@ export class UsersController {
       return this.usersService.searchUsers(user.userId, q, Number.isNaN(limit) ? 10 : limit);
     }
     return this.usersService.listUsers(user.userId);
+  }
+
+  @Get(':id/followers')
+  followers(@Param('id') id: string) {
+    return this.usersService.getFollowers(id);
+  }
+
+  @Get(':id/following')
+  following(@Param('id') id: string) {
+    return this.usersService.getFollowing(id);
+  }
+
+  @Post('presence')
+  presenceBulk(@Body() body: { userIds?: string[] }) {
+    return this.presenceService.getPresenceBulk(body.userIds ?? []);
+  }
+
+  @Get(':id/presence')
+  presence(@Param('id') id: string) {
+    return this.presenceService.getPresence(id);
   }
 
   @Get(':id')

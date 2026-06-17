@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 
 export const metadata: Metadata = createPrivatePageMetadata({
   title: "Profile",
-  path: "/profile",
 });
 
 export default function ProfileLayout({ children }: { children: ReactNode }) {

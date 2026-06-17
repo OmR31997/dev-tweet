@@ -8,9 +8,18 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+function readResetToken(params: URLSearchParams): string {
+  const raw = params.get("token") ?? "";
+  try {
+    return decodeURIComponent(raw).trim();
+  } catch {
+    return raw.trim();
+  }
+}
+
 export function ResetPasswordForm() {
   const params = useSearchParams();
-  const token = params.get("token") ?? "";
+  const token = readResetToken(params);
   const reset = useResetPassword();
   const [newPassword, setNewPassword] = useState("");
 

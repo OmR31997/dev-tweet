@@ -3,6 +3,7 @@
 import { StoreHydration } from "@/store";
 import { QueryProvider } from "./QueryProvider";
 import { ThemeProvider } from "./ThemeProvider";
+import { TokenRefreshProvider } from "./TokenRefreshProvider";
 import type { ReactNode } from "react";
 
 interface AppProvidersProps {
@@ -13,15 +14,17 @@ export function AppProviders({ children }: AppProvidersProps) {
   return (
     <StoreHydration>
       <QueryProvider>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          forcedTheme="light"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+        <TokenRefreshProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            forcedTheme="light"
+            enableSystem={false}
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
+        </TokenRefreshProvider>
       </QueryProvider>
     </StoreHydration>
   );

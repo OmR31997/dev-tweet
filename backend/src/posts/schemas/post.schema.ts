@@ -3,6 +3,23 @@ import { HydratedDocument } from 'mongoose';
 
 export type PostDocument = HydratedDocument<Post>;
 
+@Schema({ _id: false })
+export class PostAttachment {
+  @Prop({ required: true })
+  fileId: string;
+
+  @Prop({ required: true })
+  mimeType: string;
+
+  @Prop({ required: true })
+  filename: string;
+
+  @Prop({ required: true })
+  size: number;
+}
+
+export const PostAttachmentSchema = SchemaFactory.createForClass(PostAttachment);
+
 @Schema({ timestamps: true })
 export class Post {
   @Prop({ required: true, index: true })
@@ -14,11 +31,14 @@ export class Post {
   @Prop({ default: '' })
   authorPhoto: string;
 
-  @Prop({ required: true, trim: true })
+  @Prop({ default: '', trim: true })
   content: string;
 
   @Prop({ type: [String], default: [] })
   imageIds: string[];
+
+  @Prop({ type: [PostAttachmentSchema], default: [] })
+  attachments: PostAttachment[];
 
   @Prop({ type: [String], default: [] })
   likes: string[];
@@ -42,7 +62,15 @@ export class Post {
 
   @Prop({ default: null })
   repostedByName?: string;
+
+  @Prop({ default: '' })
+  repostedByPhoto?: string;
+
+  /** Optional text added by the person who reposted. */
+  @Prop({ default: '' })
+  repostCaption?: string;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);
 PostSchema.index({ createdAt: -1 });
+PostSchema.index({ repostOf: 1, repostedById: 1 });

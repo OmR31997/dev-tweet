@@ -10,8 +10,8 @@ export function MobileNav() {
   const pathname = usePathname();
   const items = useNavItems();
 
-  // Immersive conversation view: hide the tab bar on /messages/[id].
-  if (/^\/messages\/.+/.test(pathname)) {
+  // Immersive conversation / roadmap viewer: hide the tab bar.
+  if (/^\/messages\/.+/.test(pathname) || /^\/roadmaps\/.+/.test(pathname)) {
     return null;
   }
 

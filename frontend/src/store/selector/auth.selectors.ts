@@ -20,6 +20,10 @@ export function useAccessToken() {
   return useAuthStore(authSelectors.accessToken);
 }
 
+export function useRefreshToken() {
+  return useAuthStore(authSelectors.refreshToken);
+}
+
 export function useIsAuthenticated() {
   return useAuthStore(authSelectors.isAuthenticated);
 }

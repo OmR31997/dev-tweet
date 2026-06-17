@@ -1,5 +1,7 @@
 "use client";
 
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { OptionsMenu } from "@/components/common/OptionsMenu";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +25,10 @@ interface RowProps {
   postAuthorId: string;
   replies: Comment[];
   onReply: (parentId: string, content: string) => void;
+  openMenuId: string | null;
+  onMenuOpen: (id: string | null) => void;
+  openReplyId: string | null;
+  onReplyOpen: (id: string | null) => void;
   isReply?: boolean;
 }
 
@@ -31,17 +37,23 @@ function CommentRow({
   postAuthorId,
   replies,
   onReply,
+  openMenuId,
+  onMenuOpen,
+  openReplyId,
+  onReplyOpen,
   isReply = false,
 }: RowProps) {
   const me = useAuthUser();
   const toggleLike = useToggleCommentLike(comment.postId);
   const deleteComment = useDeleteComment(comment.postId);
 
-  const [replying, setReplying] = useState(false);
   const [replyDraft, setReplyDraft] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const liked = me ? comment.likes.includes(me.id) : false;
   const canDelete = me?.id === comment.authorId || me?.id === postAuthorId;
+  const menuOpen = openMenuId === comment.id;
+  const replying = openReplyId === comment.id;
 
   const submitReply = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +61,7 @@ function CommentRow({
     if (!content) return;
     onReply(comment.id, content);
     setReplyDraft("");
-    setReplying(false);
+    onReplyOpen(null);
   };
 
   return (
@@ -75,14 +87,26 @@ function CommentRow({
               {timeAgo(comment.createdAt)}
             </span>
             {canDelete ? (
-              <button
-                type="button"
-                onClick={() => deleteComment.mutate(comment.id)}
-                className="ml-auto text-muted-foreground hover:text-destructive"
-                aria-label="Delete comment"
-              >
-                <Trash2 className="size-3.5" />
-              </button>
+              <OptionsMenu
+                open={menuOpen}
+                onToggle={() => {
+                  onMenuOpen(menuOpen ? null : comment.id);
+                  if (!menuOpen) onReplyOpen(null);
+                }}
+                onClose={() => onMenuOpen(null)}
+                ariaLabel="Comment options"
+                items={[
+                  {
+                    label: "Delete",
+                    icon: <Trash2 className="size-4" />,
+                    destructive: true,
+                    onClick: () => {
+                      onMenuOpen(null);
+                      setConfirmOpen(true);
+                    },
+                  },
+                ]}
+              />
             ) : null}
           </div>
           <p className="whitespace-pre-wrap break-words text-sm">
@@ -96,7 +120,7 @@ function CommentRow({
             onClick={() => toggleLike.mutate(comment.id)}
             className={cn(
               "flex items-center gap-1 transition-colors hover:text-destructive",
-              liked && "text-destructive"
+              liked && "text-destructive",
             )}
           >
             <Heart className={cn("size-3.5", liked && "fill-current")} />
@@ -105,7 +129,10 @@ function CommentRow({
           {!isReply ? (
             <button
               type="button"
-              onClick={() => setReplying((r) => !r)}
+              onClick={() => {
+                onReplyOpen(replying ? null : comment.id);
+                if (!replying) onMenuOpen(null);
+              }}
               className="font-medium transition-colors hover:text-foreground"
             >
               Reply
@@ -137,12 +164,32 @@ function CommentRow({
                 postAuthorId={postAuthorId}
                 replies={[]}
                 onReply={onReply}
+                openMenuId={openMenuId}
+                onMenuOpen={onMenuOpen}
+                openReplyId={openReplyId}
+                onReplyOpen={onReplyOpen}
                 isReply
               />
             ))}
           </ul>
         ) : null}
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Delete comment?"
+        message="This can't be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        destructive
+        busy={deleteComment.isPending}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() =>
+          deleteComment.mutate(comment.id, {
+            onSettled: () => setConfirmOpen(false),
+          })
+        }
+      />
     </li>
   );
 }
@@ -152,6 +199,8 @@ export function CommentsSection({ post }: { post: Post }) {
   const comments = useComments(post.id);
   const addComment = useAddComment(post.id);
   const [draft, setDraft] = useState("");
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [openReplyId, setOpenReplyId] = useState<string | null>(null);
 
   const all = comments.data ?? [];
   const topLevel = all.filter((c) => !c.parentId);
@@ -201,6 +250,10 @@ export function CommentsSection({ post }: { post: Post }) {
               postAuthorId={post.authorId}
               replies={repliesOf(c.id)}
               onReply={onReply}
+              openMenuId={openMenuId}
+              onMenuOpen={setOpenMenuId}
+              openReplyId={openReplyId}
+              onReplyOpen={setOpenReplyId}
             />
           ))}
         </ul>

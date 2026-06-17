@@ -1,7 +1,5 @@
 export { Button, buttonVariants } from "./button"
 export { Typography, typographyVariants } from "./typography"
-export { Stack } from "./stack"
-export { Container } from "./container"
 export { Input } from "./input"
 export { Label } from "./label"
 export { LocaleSwitcher } from "./locale/LocaleSwitcher"

@@ -6,6 +6,7 @@ import { useLogout, useUpdateProfile } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useAuthUser } from "@/store";
 import { LogOut } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 function Toggle({
   checked,
@@ -63,6 +64,7 @@ function SettingRow({
 }
 
 export function SettingsView() {
+  const t = useTranslations("Settings");
   const user = useAuthUser();
   const update = useUpdateProfile();
   const logout = useLogout();
@@ -71,15 +73,15 @@ export function SettingsView() {
 
   return (
     <div className="mx-auto flex min-h-full max-w-2xl flex-col">
-      <PageHeader title="Settings" />
+      <PageHeader title={t("title")} />
 
       <section className="border-b border-border bg-card">
         <h2 className="px-5 pb-1 pt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Notifications
+          {t("notificationsSection")}
         </h2>
         <SettingRow
-          title="Email notifications"
-          description="Get emails about likes, follows, and messages."
+          title={t("emailNotifications")}
+          description={t("emailNotificationsDesc")}
           checked={user.emailNotificationsEnabled ?? true}
           disabled={update.isPending}
           onChange={(next) =>
@@ -87,8 +89,8 @@ export function SettingsView() {
           }
         />
         <SettingRow
-          title="Daily digest"
-          description="A once-a-day summary of activity in your network."
+          title={t("dailyDigest")}
+          description={t("dailyDigestDesc")}
           checked={user.dailyDigestEnabled ?? true}
           disabled={update.isPending}
           onChange={(next) => update.mutate({ dailyDigestEnabled: next })}
@@ -97,14 +99,14 @@ export function SettingsView() {
 
       <section className="bg-card">
         <h2 className="px-5 pb-1 pt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Account
+          {t("accountSection")}
         </h2>
         <div className="px-5 py-4">
-          <p className="text-sm text-muted-foreground">Display name</p>
+          <p className="text-sm text-muted-foreground">{t("displayName")}</p>
           <p className="font-medium">{user.displayName}</p>
         </div>
         <div className="px-5 py-4">
-          <p className="text-sm text-muted-foreground">Email</p>
+          <p className="text-sm text-muted-foreground">{t("email")}</p>
           <p className="font-medium">{user.email}</p>
         </div>
         <div className="px-5 py-4">
@@ -115,7 +117,7 @@ export function SettingsView() {
             disabled={logout.isPending}
           >
             <LogOut className="size-4" />
-            {logout.isPending ? "Signing out…" : "Sign out"}
+            {logout.isPending ? t("signingOut") : t("signOut")}
           </Button>
         </div>
       </section>

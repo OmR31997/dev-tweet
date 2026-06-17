@@ -1,10 +1,10 @@
 import { AuthCard, ForgotPasswordForm } from "@/components/features/auth";
-import { createPageMetadata } from "@/lib/seo/metadata";
+import { createUtilityPageMetadata } from "@/lib/seo/metadata";
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = createPageMetadata({
+export const metadata: Metadata = createUtilityPageMetadata({
   title: "Forgot password",
   path: "/forgot-password",
 });

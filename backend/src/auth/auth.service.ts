@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { JwtService } from '@nestjs/jwt';
 import { Model } from 'mongoose';
@@ -11,10 +11,13 @@ import { EmailService } from '../email/email.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtPayload } from './strategies/jwt.strategy';
+import { normalizeResetToken } from './utils/reset-token';
 import { createHash } from 'crypto';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     private readonly jwtService: JwtService,
@@ -95,17 +98,28 @@ export class AuthService {
         },
       },
     );
-    await this.emailService.sendForgotPasswordEmail(user.email, user.displayName, rawToken);
+    const emailResult = await this.emailService.sendForgotPasswordEmail(
+      user.email,
+      user.displayName,
+      rawToken,
+    );
+    if (!emailResult.ok) {
+      this.logger.warn(
+        `Password-reset email failed for ${user.email}: ${emailResult.reason ?? emailResult.status}`,
+      );
+    }
     return { ok: true };
   }
 
   async resetPassword(payload: ResetPasswordDto) {
-    const tokenHash = createHash('sha256').update(payload.token).digest('hex');
+    const token = normalizeResetToken(payload.token);
+    const tokenHash = createHash('sha256').update(token).digest('hex');
     const user = await this.userModel.findOne({
       resetPasswordTokenHash: tokenHash,
       resetPasswordExpiresAt: { $gt: new Date() },
     });
     if (!user) {
+      this.logger.warn('Password reset rejected: token not found or expired');
       throw new BadRequestException('Invalid or expired reset token');
     }
     const passwordHash = await bcrypt.hash(payload.newPassword, 10);
@@ -116,6 +130,7 @@ export class AuthService {
           password: passwordHash,
           resetPasswordTokenHash: null,
           resetPasswordExpiresAt: null,
+          refreshTokenHash: null,
         },
       },
     );
@@ -135,7 +150,14 @@ export class AuthService {
       },
       {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET', 'dev-refresh-secret'),
-        expiresIn: 7 * 24 * 60 * 60,
+        expiresIn:
+          Number.parseInt(
+            this.configService.get<string>(
+              'JWT_REFRESH_TTL_SECONDS',
+              String(7 * 24 * 60 * 60),
+            ),
+            10,
+          ) || 7 * 24 * 60 * 60,
       },
     );
     const refreshTokenHash = await bcrypt.hash(refreshToken, 10);

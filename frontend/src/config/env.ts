@@ -6,8 +6,12 @@
  * mixed-content, and the upstream host stays server-only.
  */
 
-/** Default upstream when no API_URL is provided. */
-const DEFAULT_API_ORIGIN = "http://localhost:4000";
+import {
+  DEFAULT_API_ORIGIN,
+  DEFAULT_API_PREFIX,
+  DEFAULT_APP_ORIGIN,
+  DEFAULT_INGRESS_ORIGIN,
+} from "./defaults";
 
 function trimTrailingSlash(url: string) {
   return url.replace(/\/$/, "");
@@ -23,11 +27,11 @@ function readBool(value: string | undefined, fallback: boolean) {
 }
 
 const apiPrefix = normalizePrefix(
-  process.env.NEXT_PUBLIC_API_PREFIX ?? process.env.API_PREFIX ?? "/api"
+  process.env.NEXT_PUBLIC_API_PREFIX ?? process.env.API_PREFIX ?? DEFAULT_API_PREFIX,
 );
 
-/** Whether the upstream is the multi-service ingress (vs a single Nest app). */
-const useMicroservices = readBool(process.env.API_USE_MICROSERVICES, true);
+/** Whether the deployment targets a multi-service ingress (vs a single Nest app). */
+const useMicroservices = readBool(process.env.API_USE_MICROSERVICES, false);
 
 /**
  * Whether the upstream itself expects the `/api` prefix. For the AWS ingress
@@ -35,28 +39,34 @@ const useMicroservices = readBool(process.env.API_USE_MICROSERVICES, true);
  */
 const upstreamUsesApiPrefix = readBool(
   process.env.API_UPSTREAM_USES_API_PREFIX,
-  false
+  false,
 );
 
-/** Upstream origin — server-only (never required in the browser). */
-const apiUpstreamOrigin = trimTrailingSlash(
-  process.env.API_URL ??
+function resolveApiUpstreamOrigin() {
+  const fromEnv =
     process.env.API_INGRESS_URL ??
+    process.env.API_URL ??
     process.env.NEST_API_URL ??
-    process.env.NEXT_PUBLIC_API_URL ??
-    DEFAULT_API_ORIGIN
-);
+    process.env.NEXT_PUBLIC_API_URL;
+
+  if (fromEnv) {
+    return trimTrailingSlash(fromEnv);
+  }
+
+  return useMicroservices ? DEFAULT_INGRESS_ORIGIN : DEFAULT_API_ORIGIN;
+}
+
+const apiUpstreamOrigin = resolveApiUpstreamOrigin();
 
 /**
  * Base URL for browser Axios calls (same-origin proxy).
- * Example: `/api` → Next.js rewrite → `<ingress>/user-service/api/v1/...`
+ * Example: `/api` → Next.js rewrite → `http://localhost:4000/*`
  */
 export function getClientApiBaseUrl(): string {
   if (typeof window !== "undefined") {
     return apiPrefix;
   }
 
-  // SSR / server actions: call back through the running Next app proxy.
   const appOrigin = (() => {
     if (process.env.NEXT_PUBLIC_APP_URL) {
       return process.env.NEXT_PUBLIC_APP_URL;
@@ -68,10 +78,17 @@ export function getClientApiBaseUrl(): string {
         : `https://${process.env.VERCEL_URL}`;
     }
 
-    return "http://localhost:3000";
+    return DEFAULT_APP_ORIGIN;
   })();
 
   return `${trimTrailingSlash(appOrigin)}${apiPrefix}`;
+}
+
+/** socket.io server — must match backend PORT and CLIENT_ORIGIN in dev. */
+export function getSocketUrl(): string {
+  return trimTrailingSlash(
+    process.env.NEXT_PUBLIC_SOCKET_URL ?? DEFAULT_API_ORIGIN,
+  );
 }
 
 export const env = {
@@ -79,5 +96,12 @@ export const env = {
   apiUpstreamOrigin,
   useMicroservices,
   upstreamUsesApiPrefix,
+  socketUrl: getSocketUrl(),
+  appUrl:
+    process.env.NEXT_PUBLIC_APP_URL ??
+    (process.env.NODE_ENV === "production"
+      ? undefined
+      : DEFAULT_APP_ORIGIN),
   isDev: process.env.NODE_ENV === "development",
+  isProd: process.env.NODE_ENV === "production",
 } as const;

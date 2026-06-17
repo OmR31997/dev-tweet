@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { createHash } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { Notification, NotificationDocument } from '../notifications/schemas/notification.schema';
 import {
@@ -17,6 +17,7 @@ import {
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
+  private readonly brandName = 'DevTweetHub';
 
   constructor(
     private readonly configService: ConfigService,
@@ -24,30 +25,56 @@ export class EmailService {
     @InjectModel(Notification.name) private readonly notificationModel: Model<NotificationDocument>,
   ) {}
 
+  private getAppUrl(): string {
+    const clientOrigin = this.configService.get<string>('CLIENT_ORIGIN', 'http://localhost:3000');
+    return clientOrigin.split(',')[0]?.trim() || 'http://localhost:3000';
+  }
+
   async sendWelcomeEmail(email: string, displayName: string) {
-    return this.sendEmail(email, 'Welcome to DevTweet Hub', welcomeTemplate(displayName));
+    return this.sendEmail(
+      email,
+      `Welcome to ${this.brandName}`,
+      welcomeTemplate(displayName, this.getAppUrl()),
+    );
   }
 
   async sendForgotPasswordEmail(email: string, displayName: string, rawToken: string) {
     const resetBaseUrl = this.configService.get<string>('PASSWORD_RESET_URL', 'http://localhost:3000/reset-password');
-    const resetUrl = `${resetBaseUrl}?token=${rawToken}`;
-    return this.sendEmail(email, 'Reset your password', forgotPasswordTemplate(displayName, resetUrl));
+    const resetUrl = `${resetBaseUrl}?token=${encodeURIComponent(rawToken)}`;
+    return this.sendEmail(
+      email,
+      'Reset your DevTweetHub password',
+      forgotPasswordTemplate(displayName, resetUrl),
+    );
   }
 
   async sendPasswordChangedEmail(email: string, displayName: string) {
-    return this.sendEmail(email, 'Password changed', passwordChangedTemplate(displayName));
-  }
-
-  async sendNewFollowerEmail(email: string, displayName: string, followerName: string) {
     return this.sendEmail(
       email,
-      'You have a new follower',
-      newFollowerTemplate(displayName, followerName),
+      'Your DevTweetHub password was changed',
+      passwordChangedTemplate(displayName, this.getAppUrl()),
+    );
+  }
+
+  async sendNewFollowerEmail(
+    email: string,
+    displayName: string,
+    followerName: string,
+    followerId?: string,
+  ) {
+    const profileUrl = followerId
+      ? `${this.getAppUrl().replace(/\/$/, '')}/profile/${followerId}`
+      : `${this.getAppUrl().replace(/\/$/, '')}/notifications`;
+
+    return this.sendEmail(
+      email,
+      `${followerName} started following you`,
+      newFollowerTemplate(displayName, followerName, profileUrl),
     );
   }
 
   createPasswordResetToken() {
-    const rawToken = `${Date.now()}-${Math.random()}-${Math.random()}`;
+    const rawToken = randomBytes(32).toString('hex');
     const tokenHash = createHash('sha256').update(rawToken).digest('hex');
     return { rawToken, tokenHash };
   }
@@ -76,8 +103,16 @@ export class EmailService {
           read: false,
         }),
       ]);
-      const summary = `Today: ${newFollowers} new followers, ${newLikes} new likes, and ${unread} unread notifications.`;
-      await this.sendEmail(user.email, 'Your daily DevTweet Hub digest', dailyDigestTemplate(user.displayName, summary));
+      const summary = {
+        newFollowers,
+        newLikes,
+        unread,
+      };
+      await this.sendEmail(
+        user.email,
+        `Your daily ${this.brandName} digest`,
+        dailyDigestTemplate(user.displayName, summary, this.getAppUrl()),
+      );
     }
   }
 
@@ -85,6 +120,7 @@ export class EmailService {
     const apiKey = this.configService.get<string>('BRAVO_MCP_API_KEY');
     const apiUrl = this.configService.get<string>('BRAVO_MCP_API_URL', 'https://api.brevo.com/v3/smtp/email');
     const from = this.configService.get<string>('EMAIL_FROM', 'no-reply@devtweethub.com');
+    const senderName = this.configService.get<string>('EMAIL_FROM_NAME', this.brandName);
 
     if (!apiKey) {
       this.logger.warn(`BRAVO_MCP_API_KEY missing. Skipping email "${subject}" to ${to}`);
@@ -99,7 +135,7 @@ export class EmailService {
           'api-key': apiKey,
         },
         body: JSON.stringify({
-          sender: { email: from },
+          sender: { email: from, name: senderName },
           to: [{ email: to }],
           subject,
           htmlContent: html,
@@ -107,13 +143,13 @@ export class EmailService {
       });
       if (!response.ok) {
         const text = await response.text();
-        this.logger.error(`Email send failed: ${response.status} ${text}`);
-        return { ok: false, status: response.status };
+        this.logger.error(`Email send failed (${response.status}) to ${to}: ${text}`);
+        return { ok: false, status: response.status, body: text };
       }
+      this.logger.log(`Email sent: "${subject}" → ${to}`);
       return { ok: true };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      // Email provider availability should not break auth or user actions.
       this.logger.warn(`Email provider unreachable. Skipping email "${subject}" to ${to}: ${message}`);
       return { ok: false, reason: 'provider_unreachable' };
     }

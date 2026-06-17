@@ -3,4 +3,7 @@ export { userService } from "./user.service";
 export { postService } from "./post.service";
 export { commentService } from "./comment.service";
 export { messageService } from "./message.service";
+export { conversationService } from "./conversation.service";
 export { notificationService } from "./notification.service";
+export { uploadService } from "./upload.service";
+export { linkPreviewService } from "./link-preview.service";
