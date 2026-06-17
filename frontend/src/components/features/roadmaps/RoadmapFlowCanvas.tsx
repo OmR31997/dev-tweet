@@ -7,6 +7,7 @@ import {
   type RoadmapFlowNodeData,
 } from "@/lib/roadmaps/parse-roadmap";
 import type { ParsedRoadmapNode, RoadmapJson } from "@/lib/roadmaps/types";
+import { cn } from "@/lib/utils";
 import {
   Background,
   Controls,
@@ -16,7 +17,8 @@ import {
   type Node,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTheme } from "next-themes";
+import { useCallback, useEffect, useMemo } from "react";
 import { RoadmapFlowNode } from "./RoadmapFlowNode";
 
 const nodeTypes = { roadmap: RoadmapFlowNode };
@@ -29,6 +31,7 @@ function RoadmapFlowCanvasInner({
   onSelectNode: (node: ParsedRoadmapNode | null) => void;
 }) {
   const { fitView } = useReactFlow();
+  const { resolvedTheme } = useTheme();
   const parsed = useMemo(() => parseRoadmapJson(data), [data]);
   const nodes = useMemo(() => toFlowNodes(parsed, data), [parsed, data]);
   const edges = useMemo(() => toFlowEdges(parsed), [parsed]);
@@ -63,7 +66,7 @@ function RoadmapFlowCanvasInner({
       minZoom={0.05}
       maxZoom={1.5}
       proOptions={{ hideAttribution: true }}
-      className="bg-muted/20"
+      className={cn("bg-muted/20", resolvedTheme === "dark" && "dark")}
     >
       <Background gap={16} size={1} />
       <Controls showInteractive={false} />

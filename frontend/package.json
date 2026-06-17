@@ -26,8 +26,10 @@
     "next": "^16.2.7",
     "next-intl": "^4.3.9",
     "next-themes": "^0.4.6",
+    "notion-client": "^7.10.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "react-notion-x": "^7.10.0",
     "socket.io-client": "^4.8.3",
     "tailwind-merge": "^3.3.1",
     "zustand": "^5.0.14"

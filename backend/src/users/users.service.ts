@@ -5,6 +5,7 @@ import { User, UserDocument } from './schemas/user.schema';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { EmailService } from '../email/email.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { parseGithubUsername } from './utils/github-username';
 
 @Injectable()
 export class UsersService {
@@ -74,7 +75,22 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, payload: UpdateProfileDto) {
-    await this.userModel.updateOne({ _id: userId }, { $set: payload });
+    const update: Record<string, unknown> = { ...payload };
+
+    if (payload.githubUsername !== undefined) {
+      const raw = payload.githubUsername.trim();
+      if (!raw) {
+        update.githubUsername = '';
+      } else {
+        const parsed = parseGithubUsername(raw);
+        if (!parsed) {
+          throw new BadRequestException('Invalid GitHub profile URL or username');
+        }
+        update.githubUsername = parsed;
+      }
+    }
+
+    await this.userModel.updateOne({ _id: userId }, { $set: update });
     return this.getById(userId);
   }
 

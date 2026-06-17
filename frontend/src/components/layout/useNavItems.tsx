@@ -4,6 +4,8 @@ import { useNotifications, useUnreadMessageCount } from "@/lib/api";
 import {
   Bell,
   Compass,
+  GitBranch,
+  GraduationCap,
   Home,
   Map,
   MessageCircle,
@@ -50,6 +52,20 @@ export function useNavItems(): NavItem[] {
       href: "/roadmaps",
       icon: Map,
       match: (p) => p.startsWith("/roadmaps"),
+    },
+    {
+      id: "course",
+      label: t("course"),
+      href: "/course",
+      icon: GraduationCap,
+      match: (p) => p.startsWith("/course"),
+    },
+    {
+      id: "learn-git",
+      label: t("learnGit"),
+      href: "/learn-git",
+      icon: GitBranch,
+      match: (p) => p.startsWith("/learn-git"),
     },
     {
       id: "notifications",

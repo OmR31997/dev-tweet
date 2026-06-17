@@ -46,4 +46,9 @@ export const queryKeys = {
     list: () => [...queryKeys.notifications.all, "list"] as const,
   },
   linkPreview: (url: string) => ["link-preview", url] as const,
+  github: {
+    all: ["github"] as const,
+    activity: (username: string) =>
+      [...queryKeys.github.all, "activity", username] as const,
+  },
 } as const;

@@ -28,6 +28,11 @@ export class UpdateProfileDto {
   year?: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  githubUsername?: string;
+
+  @IsOptional()
   @IsBoolean()
   emailNotificationsEnabled?: boolean;
 

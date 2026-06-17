@@ -17,8 +17,7 @@
   }
 
   .desktop-app {
-    @apply flex h-dvh max-h-dvh w-full overflow-hidden;
-    background: #fff;
+    @apply flex h-dvh max-h-dvh w-full overflow-hidden bg-background;
   }
 
   .desktop-sidebar {

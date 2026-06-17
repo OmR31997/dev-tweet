@@ -13,12 +13,14 @@ import {
   type AuthUser,
 } from "@/lib/api";
 import { getFollowRelationship } from "@/lib/follow.utils";
+import { githubProfileUrl } from "@/lib/github/parse-username";
 import { useAuthUser } from "@/store";
-import { MessageCircle, Settings } from "lucide-react";
+import { GitBranch, MessageCircle, Settings } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { EditProfileDialog } from "./EditProfileDialog";
 import { FollowListDialog, type FollowListTab } from "./FollowListDialog";
+import { GitHubActivityCard } from "./GitHubActivityCard";
 
 function Stat({
   label,
@@ -158,6 +160,17 @@ export function ProfileView({ userId }: { userId: string }) {
               {user.bio ? (
                 <p className="mt-3 text-[15px] leading-relaxed">{user.bio}</p>
               ) : null}
+              {user.githubUsername ? (
+                <a
+                  href={githubProfileUrl(user.githubUsername)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                >
+                  <GitBranch className="size-4" />
+                  @{user.githubUsername}
+                </a>
+              ) : null}
 
               <div className="mt-4 flex gap-5">
                 <Stat
@@ -182,6 +195,10 @@ export function ProfileView({ userId }: { userId: string }) {
                 followingCount={user.following?.length ?? 0}
               />
             </div>
+
+            {user.githubUsername ? (
+              <GitHubActivityCard username={user.githubUsername} />
+            ) : null}
 
             <h3 className="px-5 pb-1 pt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Posts

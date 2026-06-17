@@ -15,6 +15,7 @@ export interface AuthUser {
   college?: string;
   branch?: string;
   year?: string;
+  githubUsername?: string;
   followers?: string[];
   following?: string[];
   emailNotificationsEnabled?: boolean;
@@ -68,6 +69,7 @@ export interface UpdateProfileDto {
   college?: string;
   branch?: string;
   year?: string;
+  githubUsername?: string;
   emailNotificationsEnabled?: boolean;
   dailyDigestEnabled?: boolean;
 }

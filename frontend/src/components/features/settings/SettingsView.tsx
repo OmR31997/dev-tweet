@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useAuthUser } from "@/store";
 import { LogOut } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { ThemeSetting } from "./ThemeSetting";
 
 function Toggle({
   checked,
@@ -74,6 +75,13 @@ export function SettingsView() {
   return (
     <div className="mx-auto flex min-h-full max-w-2xl flex-col">
       <PageHeader title={t("title")} />
+
+      <section className="border-b border-border bg-card">
+        <h2 className="px-5 pb-1 pt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {t("appearanceSection")}
+        </h2>
+        <ThemeSetting />
+      </section>
 
       <section className="border-b border-border bg-card">
         <h2 className="px-5 pb-1 pt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">

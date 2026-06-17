@@ -10,7 +10,9 @@ import {
   useUploadImage,
   type AuthUser,
 } from "@/lib/api";
+import { parseGithubUsername } from "@/lib/github/parse-username";
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
 export function EditProfileDialog({
@@ -25,12 +27,16 @@ export function EditProfileDialog({
   const update = useUpdateProfile();
   const upload = useUploadImage();
   const fileRef = useRef<HTMLInputElement>(null);
+  const t = useTranslations("Profile.edit");
 
   const [displayName, setDisplayName] = useState(user.displayName);
   const [bio, setBio] = useState(user.bio ?? "");
   const [college, setCollege] = useState(user.college ?? "");
   const [branch, setBranch] = useState(user.branch ?? "");
   const [year, setYear] = useState(user.year ?? "");
+  const [github, setGithub] = useState(
+    user.githubUsername ? `https://github.com/${user.githubUsername}` : "",
+  );
   const [photoURL, setPhotoURL] = useState(user.photoURL ?? "");
   const [error, setError] = useState<string | null>(null);
 
@@ -56,6 +62,11 @@ export function EditProfileDialog({
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const githubTrimmed = github.trim();
+    if (githubTrimmed && !parseGithubUsername(githubTrimmed)) {
+      setError(t("githubInvalid"));
+      return;
+    }
     update.mutate(
       {
         displayName: displayName.trim(),
@@ -64,6 +75,7 @@ export function EditProfileDialog({
         branch: branch.trim(),
         year: year.trim(),
         photoURL,
+        githubUsername: githubTrimmed,
       },
       {
         onSuccess: () => onClose(),
@@ -83,7 +95,7 @@ export function EditProfileDialog({
         onSubmit={onSubmit}
         className="w-full max-w-md space-y-4 rounded-2xl border border-border bg-card p-6 shadow-xl"
       >
-        <h2 className="text-lg font-semibold">Edit profile</h2>
+        <h2 className="text-lg font-semibold">{t("title")}</h2>
 
         <div className="flex items-center gap-4">
           <UserAvatar
@@ -102,7 +114,7 @@ export function EditProfileDialog({
               {upload.isPending ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : null}
-              Change photo
+              {t("changePhoto")}
             </Button>
             <input
               ref={fileRef}
@@ -115,7 +127,7 @@ export function EditProfileDialog({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="displayName">Display name</Label>
+          <Label htmlFor="displayName">{t("displayName")}</Label>
           <Input
             id="displayName"
             value={displayName}
@@ -125,7 +137,7 @@ export function EditProfileDialog({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="bio">Bio</Label>
+          <Label htmlFor="bio">{t("bio")}</Label>
           <textarea
             id="bio"
             value={bio}
@@ -138,7 +150,7 @@ export function EditProfileDialog({
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label htmlFor="college">College</Label>
+            <Label htmlFor="college">{t("college")}</Label>
             <Input
               id="college"
               value={college}
@@ -146,7 +158,7 @@ export function EditProfileDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="branch">Branch</Label>
+            <Label htmlFor="branch">{t("branch")}</Label>
             <Input
               id="branch"
               value={branch}
@@ -156,7 +168,7 @@ export function EditProfileDialog({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="year">Year</Label>
+          <Label htmlFor="year">{t("year")}</Label>
           <Input
             id="year"
             value={year}
@@ -164,14 +176,26 @@ export function EditProfileDialog({
           />
         </div>
 
+        <div className="space-y-1.5">
+          <Label htmlFor="github">{t("github")}</Label>
+          <Input
+            id="github"
+            value={github}
+            onChange={(e) => setGithub(e.target.value)}
+            placeholder={t("githubPlaceholder")}
+            inputMode="url"
+          />
+          <p className="text-xs text-muted-foreground">{t("githubHint")}</p>
+        </div>
+
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
         <div className="flex justify-end gap-3 pt-2">
           <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button type="submit" disabled={update.isPending}>
-            {update.isPending ? "Saving…" : "Save"}
+            {update.isPending ? t("saving") : t("save")}
           </Button>
         </div>
       </form>

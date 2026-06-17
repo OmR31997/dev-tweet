@@ -11,7 +11,12 @@ export function MobileNav() {
   const items = useNavItems();
 
   // Immersive conversation / roadmap viewer: hide the tab bar.
-  if (/^\/messages\/.+/.test(pathname) || /^\/roadmaps\/.+/.test(pathname)) {
+  if (
+    /^\/messages\/.+/.test(pathname) ||
+    /^\/roadmaps\/.+/.test(pathname) ||
+    pathname.startsWith("/course") ||
+    pathname.startsWith("/learn-git")
+  ) {
     return null;
   }
 

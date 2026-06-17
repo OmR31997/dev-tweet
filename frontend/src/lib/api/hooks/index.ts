@@ -72,3 +72,4 @@ export {
   useMarkNotificationRead,
   useNotifications,
 } from "./use-notifications";
+export { useGithubActivity } from "./use-github-activity";

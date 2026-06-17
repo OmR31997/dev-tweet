@@ -90,6 +90,7 @@ export function normalizeUser(payload: unknown): AuthUser {
     college: asString(raw.college),
     branch: asString(raw.branch),
     year: asString(raw.year),
+    githubUsername: asString(raw.githubUsername),
     followers: asStringArray(raw.followers),
     following: asStringArray(raw.following),
     emailNotificationsEnabled:

@@ -17,9 +17,9 @@ export function AppProviders({ children }: AppProvidersProps) {
         <TokenRefreshProvider>
           <ThemeProvider
             attribute="class"
-            defaultTheme="light"
-            forcedTheme="light"
-            enableSystem={false}
+            defaultTheme="system"
+            enableSystem
+            storageKey="devtweethub-theme"
             disableTransitionOnChange
           >
             {children}

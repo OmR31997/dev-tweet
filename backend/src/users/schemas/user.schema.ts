@@ -29,6 +29,9 @@ export class User {
   @Prop({ default: '' })
   year: string;
 
+  @Prop({ default: '' })
+  githubUsername: string;
+
   @Prop({ type: [String], default: [] })
   followers: string[];
 
