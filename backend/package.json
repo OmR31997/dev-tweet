@@ -13,7 +13,7 @@
   "private": true,
   "license": "UNLICENSED",
   "engines": {
-    "node": ">=20"
+    "node": ">=20 <23"
   },
   "scripts": {
     "build": "nest build",

@@ -18,6 +18,7 @@ import { ChatPreferencesModule } from './chat-preferences/chat-preferences.modul
 import { LinkPreviewModule } from './link-preview/link-preview.module';
 import { validateEnv } from './config/env.validation';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     WsModule,
     EmailModule,
   ],
+  controllers: [AppController],
   providers: [
     {
       provide: APP_GUARD,
