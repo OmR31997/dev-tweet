@@ -5,11 +5,15 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useAccessToken } from "@/store/selector";
+import { useAccessToken, useAuthUser } from "@/store/selector";
+import {
+  buildOptimisticDmMessage,
+  replaceOptimisticMessages,
+} from "../optimistic";
 import { realtimeRefetchInterval } from "../query-polling";
 import { queryKeys } from "../query-keys";
 import { messageService } from "../services/message.service";
-import type { ForwardMessagesDto, SendMessageDto } from "../types";
+import type { ForwardMessagesDto, Message, SendMessageDto } from "../types";
 
 export function useConversation(otherUserId: string | undefined) {
   const accessToken = useAccessToken();
@@ -20,18 +24,66 @@ export function useConversation(otherUserId: string | undefined) {
   });
 }
 
+type SendMessageInput = SendMessageDto | SendMessageDto[];
+
+async function sendMessages(input: SendMessageInput): Promise<Message[]> {
+  const dtos = Array.isArray(input) ? input : [input];
+  return Promise.all(dtos.map((dto) => messageService.send(dto)));
+}
+
 export function useSendMessage() {
   const queryClient = useQueryClient();
+  const me = useAuthUser();
+
   return useMutation({
-    mutationFn: (dto: SendMessageDto) => messageService.send(dto),
-    onSuccess: (msg) => {
-      if (msg.recipientId) {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.messages.conversation(msg.recipientId),
-        });
+    mutationFn: sendMessages,
+    onMutate: async (input) => {
+      const dtos = Array.isArray(input) ? input : [input];
+      const recipientId = dtos[0]?.recipientId;
+      if (!me?.id || !recipientId) return;
+
+      const key = queryKeys.messages.conversation(recipientId);
+      await queryClient.cancelQueries({ queryKey: key });
+
+      const previous = queryClient.getQueryData<Message[]>(key);
+      const existing = previous ?? [];
+      const optimisticMessages = dtos.map((dto) =>
+        buildOptimisticDmMessage(dto, me, existing),
+      );
+      const optimisticIds = optimisticMessages.map((message) => message.id);
+
+      queryClient.setQueryData<Message[]>(key, [
+        ...existing,
+        ...optimisticMessages,
+      ]);
+
+      return { key, previous, optimisticIds };
+    },
+    onError: (_error, _input, context) => {
+      if (context?.key) {
+        queryClient.setQueryData(context.key, context.previous);
       }
-      queryClient.invalidateQueries({ queryKey: queryKeys.inbox.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.conversations.all });
+    },
+    onSuccess: (serverMessages, input, context) => {
+      const recipientId = (Array.isArray(input) ? input[0] : input).recipientId;
+      const key =
+        context?.key ?? queryKeys.messages.conversation(recipientId);
+      const optimisticIds = context?.optimisticIds ?? [];
+
+      queryClient.setQueryData<Message[]>(key, (current) => {
+        const base = current ?? context?.previous ?? [];
+        return replaceOptimisticMessages(base, optimisticIds, serverMessages);
+      });
+    },
+    onSettled: (_data, _error, input) => {
+      const recipientId = (Array.isArray(input) ? input[0] : input).recipientId;
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.inbox.all,
+        refetchType: "none",
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.messages.conversation(recipientId),
+      });
     },
   });
 }
@@ -87,12 +139,67 @@ export function useUnreadMessageCount() {
 
 export function useToggleMessageReaction() {
   const queryClient = useQueryClient();
+  const me = useAuthUser();
+
   return useMutation({
     mutationFn: ({ id, emoji }: { id: string; emoji: string }) =>
       messageService.toggleReaction(id, emoji),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.messages.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.conversations.all });
+    onMutate: async ({ id, emoji }) => {
+      const meId = me?.id;
+      if (!meId) return;
+
+      await queryClient.cancelQueries({ queryKey: queryKeys.messages.all });
+      await queryClient.cancelQueries({ queryKey: queryKeys.conversations.all });
+
+      const snapshots = [
+        ...queryClient.getQueriesData<Message[]>({
+          queryKey: queryKeys.messages.all,
+        }),
+        ...queryClient.getQueriesData<Message[]>({
+          queryKey: queryKeys.conversations.all,
+        }),
+      ];
+
+      const patch = (messages: Message[] | undefined) =>
+        messages?.map((message) => {
+          if (message.id !== id) return message;
+          const reactions = message.reactions ?? [];
+          const existing = reactions.find(
+            (reaction) => reaction.userId === meId && reaction.emoji === emoji,
+          );
+          return {
+            ...message,
+            reactions: existing
+              ? reactions.filter((reaction) => reaction !== existing)
+              : [...reactions, { userId: meId, emoji }],
+          };
+        });
+
+      queryClient.setQueriesData<Message[]>(
+        { queryKey: queryKeys.messages.all },
+        patch,
+      );
+      queryClient.setQueriesData<Message[]>(
+        { queryKey: queryKeys.conversations.all },
+        patch,
+      );
+
+      return { snapshots };
+    },
+    onError: (_error, _vars, context) => {
+      for (const [key, data] of context?.snapshots ?? []) {
+        queryClient.setQueryData(key, data);
+      }
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.messages.all,
+        refetchType: "none",
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.conversations.all,
+        refetchType: "none",
+      });
     },
   });
 }

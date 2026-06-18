@@ -1,7 +1,7 @@
 "use client";
 
 import { PageHeader } from "@/components/common/PageHeader";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/common/SearchInput";
 import {
   filterRoadmaps,
   groupRoadmaps,
@@ -9,7 +9,7 @@ import {
 } from "@/lib/roadmaps/catalog";
 import type { RoadmapGroup } from "@/lib/roadmaps/types";
 import { cn } from "@/lib/utils";
-import { ChevronRight, Search } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
@@ -34,15 +34,12 @@ export function RoadmapsView() {
       <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
       <div className="border-b border-border bg-card px-5 py-4">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t("searchPlaceholder")}
-            className="h-10 pl-9"
-          />
-        </div>
+        <SearchInput
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t("searchPlaceholder")}
+          className="h-10"
+        />
       </div>
 
       <div className="flex-1 px-5 py-4">

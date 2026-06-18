@@ -11,6 +11,7 @@ import {
   type Post,
 } from "@/lib/api";
 import { timeAgo } from "@/lib/format";
+import { useTapOnly } from "@/lib/use-tap-only";
 import { cn } from "@/lib/utils";
 import { useAuthUser } from "@/store";
 import {
@@ -21,12 +22,49 @@ import {
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { CommentsSection } from "./CommentsSection";
 import { EditPostDialog } from "./EditPostDialog";
 import { PostContent } from "./PostContent";
 import { PostMedia } from "./PostMedia";
 import { RepostDialog } from "./RepostDialog";
+
+function PostActionButton({
+  label,
+  active,
+  activeClassName,
+  disabled,
+  onPress,
+  children,
+}: {
+  label: string;
+  active?: boolean;
+  activeClassName?: string;
+  disabled?: boolean;
+  onPress: () => void;
+  children: ReactNode;
+}) {
+  const tap = useTapOnly(onPress);
+
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-pressed={active}
+      disabled={disabled}
+      className={cn(
+        "feed-action-btn flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-2 transition-colors hover:text-foreground",
+        active && activeClassName,
+      )}
+      onClick={tap.onClick}
+      onPointerDown={tap.onPointerDown}
+      onPointerUp={tap.onPointerUp}
+      onPointerCancel={tap.onPointerCancel}
+    >
+      {children}
+    </button>
+  );
+}
 
 function PostActions({
   post,
@@ -50,44 +88,38 @@ function PostActions({
   repostPending: boolean;
 }) {
   return (
-    <div className="mt-3 flex items-center gap-6 text-sm text-muted-foreground">
-      <button
-        type="button"
-        onClick={onToggleLike}
+    <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+      <PostActionButton
+        label="Like"
+        active={liked}
+        activeClassName="text-destructive hover:text-destructive"
         disabled={likePending}
-        className={cn(
-          "flex items-center gap-1.5 transition-colors hover:text-destructive",
-          liked && "text-destructive",
-        )}
+        onPress={onToggleLike}
       >
         <Heart className={cn("size-4", liked && "fill-current")} />
         {post.likes.length > 0 ? post.likes.length : null}
-      </button>
+      </PostActionButton>
 
-      <button
-        type="button"
-        onClick={onToggleComments}
-        className={cn(
-          "flex items-center gap-1.5 transition-colors hover:text-primary",
-          showComments && "text-primary",
-        )}
+      <PostActionButton
+        label="Comment"
+        active={showComments}
+        activeClassName="text-primary hover:text-primary"
+        onPress={onToggleComments}
       >
         <MessageCircle className="size-4" />
         {post.commentCount > 0 ? post.commentCount : "Comment"}
-      </button>
+      </PostActionButton>
 
-      <button
-        type="button"
-        onClick={onRepostClick}
+      <PostActionButton
+        label="Repost"
+        active={reposted}
+        activeClassName="text-green-600 hover:text-green-600"
         disabled={repostPending}
-        className={cn(
-          "flex items-center gap-1.5 transition-colors hover:text-green-600",
-          reposted && "text-green-600",
-        )}
+        onPress={onRepostClick}
       >
         <Repeat2 className="size-4" />
         {post.reposts.length > 0 ? post.reposts.length : "Repost"}
-      </button>
+      </PostActionButton>
     </div>
   );
 }
@@ -140,7 +172,7 @@ export function PostCard({
 
     return (
       <article
-        className="border-b border-border bg-card"
+        className="feed-post border-b border-border bg-card"
         data-post-comments={post.id}
       >
         <div className="flex gap-3 px-5 py-4">
@@ -258,7 +290,7 @@ export function PostCard({
 
   return (
     <article
-      className="border-b border-border bg-card"
+      className="feed-post border-b border-border bg-card"
       data-post-comments={post.id}
     >
       <div className="flex gap-3 px-5 py-4">

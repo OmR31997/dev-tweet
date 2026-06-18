@@ -1,13 +1,14 @@
 "use client";
 
 import { UserAvatar } from "@/components/common/UserAvatar";
+import { SearchInput } from "@/components/common/SearchInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getErrorMessage, useCreateGroup, useUsers } from "@/lib/api";
 import { useSearchQuery } from "@/lib/use-search-query";
 import { cn } from "@/lib/utils";
 import { useAuthUser } from "@/store";
-import { Search, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -128,15 +129,12 @@ export function CreateGroupDialog({
             </div>
           ) : null}
 
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search people to add…"
-              className="h-9 pl-9"
-            />
-          </div>
+          <SearchInput
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search people to add…"
+            className="h-9"
+          />
 
           <div className="max-h-48 overflow-y-auto rounded-xl border border-border">
             {people.length === 0 ? (

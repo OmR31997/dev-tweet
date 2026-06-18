@@ -54,7 +54,6 @@ export function PostComposerForm({
   const canSubmit =
     (content.trim().length > 0 || mediaCount > 0) &&
     content.length <= POST_MAX_LENGTH &&
-    !createPost.isPending &&
     !uploading;
 
   const reset = () => {
@@ -102,21 +101,19 @@ export function PostComposerForm({
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
-    createPost.mutate(
-      {
-        content: content.trim(),
-        ...(imageIds.length > 0 ? { imageIds } : {}),
-        ...(attachments.length > 0 ? { attachments } : {}),
-        tags: extractTags(content),
-      },
-      {
-        onSuccess: () => {
-          reset();
-          onPosted?.();
-        },
-        onError: (err) => setError(getErrorMessage(err)),
-      },
-    );
+
+    const dto = {
+      content: content.trim(),
+      ...(imageIds.length > 0 ? { imageIds } : {}),
+      ...(attachments.length > 0 ? { attachments } : {}),
+      tags: extractTags(content),
+    };
+
+    reset();
+    onPosted?.();
+    createPost.mutate(dto, {
+      onError: (err) => setError(getErrorMessage(err)),
+    });
   };
 
   const busy = uploading || uploadImage.isPending || uploadFile.isPending;

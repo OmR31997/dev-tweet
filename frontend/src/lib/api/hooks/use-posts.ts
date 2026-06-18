@@ -10,6 +10,7 @@ import { useAuthUser } from "@/store/selector";
 import { realtimeRefetchInterval } from "../query-polling";
 import { queryKeys } from "../query-keys";
 import { postService } from "../services/post.service";
+import { buildOptimisticPost } from "../optimistic";
 import type { CreatePostDto, Post, RepostPostDto, UpdatePostDto } from "../types";
 
 type PostsQueryOptions = {
@@ -44,10 +45,49 @@ function patchPostsInCache(
 
 export function useCreatePost() {
   const queryClient = useQueryClient();
+  const me = useAuthUser();
+
   return useMutation({
     mutationFn: (dto: CreatePostDto) => postService.create(dto),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
+    onMutate: async (dto) => {
+      if (!me?.id) return;
+
+      await queryClient.cancelQueries({ queryKey: queryKeys.posts.all });
+      const snapshots = queryClient.getQueriesData<Post[]>({
+        queryKey: queryKeys.posts.all,
+      });
+      const optimistic = buildOptimisticPost(dto, me);
+
+      queryClient.setQueriesData<Post[]>(
+        { queryKey: queryKeys.posts.all },
+        (old) => [optimistic, ...(old ?? [])],
+      );
+
+      return { snapshots, optimisticId: optimistic.id };
+    },
+    onError: (_error, _dto, context) => {
+      for (const [key, data] of context?.snapshots ?? []) {
+        queryClient.setQueryData(key, data);
+      }
+    },
+    onSuccess: (post, _dto, context) => {
+      const optimisticId = context?.optimisticId;
+      queryClient.setQueriesData<Post[]>(
+        { queryKey: queryKeys.posts.all },
+        (old) => {
+          if (!old) return [post];
+          if (!optimisticId) {
+            return old.some((item) => item.id === post.id) ? old : [post, ...old];
+          }
+          return old.map((item) => (item.id === optimisticId ? post : item));
+        },
+      );
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.posts.all,
+        refetchType: "none",
+      });
     },
   });
 }

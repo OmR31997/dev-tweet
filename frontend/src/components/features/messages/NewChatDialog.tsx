@@ -1,12 +1,12 @@
 "use client";
 
 import { UserAvatar } from "@/components/common/UserAvatar";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/common/SearchInput";
 import { useUsers } from "@/lib/api";
 import { useSearchQuery } from "@/lib/use-search-query";
 import { cn } from "@/lib/utils";
 import { useAuthUser } from "@/store";
-import { Search, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect } from "react";
@@ -64,16 +64,13 @@ export function NewChatDialog({
         </div>
 
         <div className="border-b border-border px-4 py-3">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t("searchContacts")}
-              className="h-10 pl-9"
-              autoFocus
-            />
-          </div>
+          <SearchInput
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("searchContacts")}
+            className="h-10"
+            autoFocus
+          />
         </div>
 
         <div className="flex-1 overflow-y-auto px-2 py-2">

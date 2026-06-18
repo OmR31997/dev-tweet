@@ -1,12 +1,12 @@
 "use client";
 
 import { UserAvatar } from "@/components/common/UserAvatar";
+import { SearchInput } from "@/components/common/SearchInput";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useConversations, useUsers } from "@/lib/api";
 import { useSearchQuery } from "@/lib/use-search-query";
 import { useAuthUser } from "@/store";
-import { Search, Users, X } from "lucide-react";
+import { Users, X } from "lucide-react";
 
 export function ForwardMessageDialog({
   open,
@@ -58,15 +58,12 @@ export function ForwardMessageDialog({
         </div>
 
         <div className="border-b border-border px-5 py-3">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search chats…"
-              className="h-9 pl-9"
-            />
-          </div>
+          <SearchInput
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search chats…"
+            className="h-9"
+          />
         </div>
 
         <div className="flex-1 overflow-y-auto p-2">

@@ -1,5 +1,6 @@
 "use client";
 
+import { scrollAppToElement } from "@/lib/app-scroll";
 import { useEffect, useState } from "react";
 
 function scrollToComments(postId: string) {
@@ -8,11 +9,7 @@ function scrollToComments(postId: string) {
   const target = panel ?? article;
   if (!target) return;
 
-  target.scrollIntoView({
-    behavior: "smooth",
-    block: "start",
-    inline: "nearest",
-  });
+  scrollAppToElement(target);
 }
 
 export function useCommentsPanel() {
@@ -21,7 +18,9 @@ export function useCommentsPanel() {
   useEffect(() => {
     if (!openPostId) return;
 
-    const onPointerDown = (event: MouseEvent) => {
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+
       const panel = document.querySelector(
         `[data-post-comments="${openPostId}"]`,
       );
@@ -30,16 +29,17 @@ export function useCommentsPanel() {
       }
     };
 
-    document.addEventListener("mousedown", onPointerDown);
-    return () => document.removeEventListener("mousedown", onPointerDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [openPostId]);
 
   useEffect(() => {
     if (!openPostId) return;
 
-    requestAnimationFrame(() => {
+    const frame = requestAnimationFrame(() => {
       requestAnimationFrame(() => scrollToComments(openPostId));
     });
+    return () => cancelAnimationFrame(frame);
   }, [openPostId]);
 
   return {

@@ -26,8 +26,6 @@ export function FollowButton({
   if (relationship.isSelf) return null;
   if (hideWhenFollowing && relationship.isFollowing) return null;
 
-  const busy = toggleFollow.isPending;
-
   return (
     <Button
       type="button"
@@ -37,7 +35,6 @@ export function FollowButton({
         size === "sm" && "h-8 rounded-lg px-4 text-xs font-semibold",
         className,
       )}
-      disabled={busy}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();

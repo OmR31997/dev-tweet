@@ -2,14 +2,14 @@
 
 import { UserRow } from "@/components/common/UserRow";
 import { FollowButton } from "@/components/common/FollowButton";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/common/SearchInput";
 import {
   useFollowers,
   useFollowing,
 } from "@/lib/api";
 import { useDebouncedValue } from "@/lib/use-debounce";
 import { cn } from "@/lib/utils";
-import { Search, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 export type FollowListTab = "followers" | "following";
@@ -120,15 +120,12 @@ export function FollowListDialog({
         </div>
 
         <div className="border-b border-border px-4 py-3">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search"
-              className="h-9 rounded-lg bg-muted/50 pl-9"
-            />
-          </div>
+          <SearchInput
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search"
+            className="h-9 rounded-lg bg-muted/50"
+          />
         </div>
 
         <div className="flex-1 overflow-y-auto">

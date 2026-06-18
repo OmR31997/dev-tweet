@@ -8,6 +8,7 @@ import {
   resolveImageUrl,
 } from "@/lib/api/normalizers";
 import { cn } from "@/lib/utils";
+import { useTapOnly } from "@/lib/use-tap-only";
 import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import { useMemo, useState } from "react";
 import { attachmentKind } from "./post-composer.utils";
@@ -20,6 +21,38 @@ function isCsvAttachment(attachment: PostAttachment) {
   const name = attachment.filename.toLowerCase();
   return (
     attachment.mimeType === "text/csv" || name.endsWith(".csv")
+  );
+}
+
+function PostImageTile({
+  id,
+  index,
+  onOpen,
+}: {
+  id: string;
+  index: number;
+  onOpen: (index: number) => void;
+}) {
+  const tap = useTapOnly(() => onOpen(index));
+
+  return (
+    <button
+      type="button"
+      aria-label="View photo"
+      className="feed-action-btn block overflow-hidden rounded-xl border border-border transition-opacity hover:opacity-95"
+      onClick={tap.onClick}
+      onPointerDown={tap.onPointerDown}
+      onPointerUp={tap.onPointerUp}
+      onPointerCancel={tap.onPointerCancel}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={resolveImageUrl(id)}
+        alt=""
+        className="pointer-events-none max-h-96 w-full object-cover"
+        draggable={false}
+      />
+    </button>
   );
 }
 
@@ -48,23 +81,12 @@ function PostImageGrid({ imageIds }: { imageIds: string[] }) {
         )}
       >
         {imageIds.map((id, index) => (
-          <button
+          <PostImageTile
             key={id}
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setPreviewIndex(index);
-            }}
-            className="block overflow-hidden rounded-xl border border-border transition-opacity hover:opacity-95"
-            aria-label="View photo"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={resolveImageUrl(id)}
-              alt=""
-              className="max-h-96 w-full cursor-pointer object-cover"
-            />
-          </button>
+            id={id}
+            index={index}
+            onOpen={setPreviewIndex}
+          />
         ))}
       </div>
 

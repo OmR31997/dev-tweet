@@ -16,7 +16,7 @@ export function PageHeader({
   showLocale = true,
 }: PageHeaderProps) {
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-border bg-background px-5 py-3.5 [padding-top:max(0.875rem,env(safe-area-inset-top))] md:px-6 md:py-4 md:[padding-top:1rem]">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-border bg-background px-5 py-3.5 [padding-top:max(0.875rem,env(safe-area-inset-top))] supports-[backdrop-filter]:bg-background/95 supports-[backdrop-filter]:backdrop-blur-sm md:px-6 md:py-4 md:[padding-top:1rem]">
       <div className="min-w-0">
         <h1 className="truncate text-lg font-semibold tracking-tight">
           {title}

@@ -108,15 +108,16 @@ export function GroupConversation({
     if (payload.messageType === "text" && !payload.content && !payload.attachments?.length) {
       return;
     }
-    const messages = buildMessagesFromComposerPayload<SendGroupMessageDto>(
+    const outbound = buildMessagesFromComposerPayload<SendGroupMessageDto>(
       payload,
       {},
       replyTo?.id,
+    ).filter(
+      (message) => message.messageType !== "text" || Boolean(message.content),
     );
-    for (const message of messages) {
-      if (message.messageType === "text" && !message.content) continue;
-      sendMessage.mutate(message);
-    }
+    if (outbound.length === 0) return;
+
+    sendMessage.mutate(outbound.length === 1 ? outbound[0] : outbound);
     setDraft("");
     setReplyTo(null);
   };
@@ -419,7 +420,6 @@ export function GroupConversation({
         value={draft}
         onChange={setDraft}
         onSend={onSend}
-        disabled={sendMessage.isPending}
         replyTo={replyTo}
         onCancelReply={() => setReplyTo(null)}
         placeholder={t("typePlaceholder")}

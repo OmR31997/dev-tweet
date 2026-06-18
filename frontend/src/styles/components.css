@@ -48,7 +48,27 @@
   .app-main-scroll {
     @apply min-h-0 flex-1 overflow-y-auto overscroll-y-contain;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overflow-anchor: auto;
     padding-bottom: var(--mobile-nav-safe-height);
+  }
+
+  .feed-post {
+    touch-action: pan-y;
+  }
+
+  .feed-action-btn {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .feed-action-btn:not([disabled]):active {
+    @apply opacity-80;
+  }
+
+  .feed-horizontal-scroll {
+    touch-action: pan-x pinch-zoom;
+    -webkit-overflow-scrolling: touch;
   }
 
   .app-main-fill {

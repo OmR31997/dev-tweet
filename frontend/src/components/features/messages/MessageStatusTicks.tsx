@@ -1,8 +1,9 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import type { Message } from "@/lib/api";
-import { Check, CheckCheck } from "lucide-react";
+import { isOptimisticId } from "@/lib/api/optimistic";
+import { cn } from "@/lib/utils";
+import { Check, CheckCheck, Clock } from "lucide-react";
 
 export function MessageStatusTicks({
   message,
@@ -48,6 +49,10 @@ export function MessageStatusTicks({
           ? "text-current opacity-80"
           : "text-muted-foreground",
   );
+
+  if (isOptimisticId(message.id)) {
+    return <Clock className={tickClass} aria-label="Sending" />;
+  }
 
   if (!delivered) {
     return <Check className={tickClass} aria-label="Sent" />;

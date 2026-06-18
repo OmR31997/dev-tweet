@@ -1,8 +1,8 @@
 "use client";
 
 import { UserAvatar } from "@/components/common/UserAvatar";
+import { SearchInput } from "@/components/common/SearchInput";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   useArchivedChatCount,
   useConversations,
@@ -14,7 +14,7 @@ import { chatListTime } from "@/lib/format";
 import { useDebouncedValue } from "@/lib/use-debounce";
 import { cn } from "@/lib/utils";
 import { useAuthUser } from "@/store";
-import { Archive, MessageCirclePlus, Search, Users } from "lucide-react";
+import { Archive, MessageCirclePlus, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -165,17 +165,14 @@ export function MessagesSidebar() {
               </Button>
             </div>
           )}
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={
-                showArchived ? t("searchArchivedChats") : t("searchChatsOrContacts")
-              }
-              className="h-9 pl-9"
-            />
-          </div>
+          <SearchInput
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={
+              showArchived ? t("searchArchivedChats") : t("searchChatsOrContacts")
+            }
+            className="h-9"
+          />
         </div>
 
         <div className="chat-list-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain pb-[var(--mobile-nav-safe-height)] md:pb-0">

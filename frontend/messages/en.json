@@ -475,6 +475,7 @@
     "user": "User",
     "you": "You",
     "retry": "Retry",
-    "close": "Close"
+    "close": "Close",
+    "clearSearch": "Clear search"
   }
 }

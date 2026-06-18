@@ -138,11 +138,10 @@ export function PdfPageCarousel({
         ref={containerRef}
         onScroll={handleScroll}
         className={cn(
-          "flex overflow-x-auto overflow-y-hidden overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-          multiPage && "snap-x snap-mandatory touch-pan-x",
+          "feed-horizontal-scroll flex overflow-x-auto overflow-y-hidden overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+          multiPage && "snap-x snap-mandatory",
           compact ? "h-56" : "h-[min(70vh,520px)]",
         )}
-        style={{ WebkitOverflowScrolling: "touch" }}
       >
         {pageUrls.map((url, index) => (
           <div

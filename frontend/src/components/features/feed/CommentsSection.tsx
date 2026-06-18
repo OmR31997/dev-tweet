@@ -213,7 +213,8 @@ export function CommentsSection({ post }: { post: Post }) {
     e.preventDefault();
     const content = draft.trim();
     if (!content) return;
-    addComment.mutate({ content }, { onSuccess: () => setDraft("") });
+    setDraft("");
+    addComment.mutate({ content });
   };
 
   return (

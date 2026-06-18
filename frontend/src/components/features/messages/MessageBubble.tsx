@@ -2,6 +2,7 @@
 
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { useUser, type Message } from "@/lib/api";
+import { isOptimisticId } from "@/lib/api/optimistic";
 import { formatMessageTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useAuthUser } from "@/store";
@@ -322,6 +323,7 @@ export function MessageBubble({
         className={cn(
           "chat-message-row scroll-mt-4",
           mine ? "chat-message-row--out" : "chat-message-row--in",
+          isOptimisticId(message.id) && "chat-message-row--pending",
           selectionMode && "cursor-pointer",
         )}
         onClick={handleClick}

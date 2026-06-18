@@ -127,15 +127,16 @@ export function Conversation({ otherUserId }: { otherUserId: string }) {
       return;
     }
     stopTyping();
-    const messages = buildMessagesFromComposerPayload<SendMessageDto>(
+    const outbound = buildMessagesFromComposerPayload<SendMessageDto>(
       payload,
       { recipientId: otherUserId },
       replyTo?.id,
+    ).filter(
+      (message) => message.messageType !== "text" || Boolean(message.content),
     );
-    for (const message of messages) {
-      if (message.messageType === "text" && !message.content) continue;
-      sendMessage.mutate(message);
-    }
+    if (outbound.length === 0) return;
+
+    sendMessage.mutate(outbound.length === 1 ? outbound[0] : outbound);
     setDraft("");
     setReplyTo(null);
   };
@@ -439,7 +440,6 @@ export function Conversation({ otherUserId }: { otherUserId: string }) {
         onChange={setDraft}
         onSend={onSend}
         onTyping={emitTyping}
-        disabled={sendMessage.isPending}
         replyTo={replyTo}
         onCancelReply={() => setReplyTo(null)}
         placeholder={t("typePlaceholder")}

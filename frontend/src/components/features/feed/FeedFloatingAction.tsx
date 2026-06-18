@@ -1,11 +1,12 @@
 "use client";
 
+import { getAppScrollRoot } from "@/lib/app-scroll";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { PostComposerDialog } from "./PostComposerDialog";
 
 function getScrollRoot() {
-  return document.querySelector("main");
+  return getAppScrollRoot() ?? document.querySelector("main");
 }
 
 export function FeedFloatingAction({

@@ -1,6 +1,7 @@
 "use client";
 
 import { UserAvatar } from "@/components/common/UserAvatar";
+import { SearchInput } from "@/components/common/SearchInput";
 import {
   getErrorMessage,
   useDemoteGroupMember,
@@ -17,7 +18,6 @@ import {
   ChevronRight,
   ImageIcon,
   MoreVertical,
-  Search,
   Shield,
   ShieldOff,
   UserMinus,
@@ -218,16 +218,13 @@ export function GroupInfoPanel({
               ) : null}
             </div>
 
-            <div className="chat-group-member-search">
-              <Search className="chat-group-member-search-icon" aria-hidden />
-              <input
-                type="search"
-                value={memberSearch}
-                onChange={(e) => setMemberSearch(e.target.value)}
-                placeholder={t("searchMembers")}
-                className="chat-group-member-search-input"
-              />
-            </div>
+            <SearchInput
+              value={memberSearch}
+              onChange={(e) => setMemberSearch(e.target.value)}
+              placeholder={t("searchMembers")}
+              className="h-9"
+              wrapperClassName="chat-group-member-search mb-3"
+            />
 
             {filteredParticipants.length === 0 ? (
               <p className="chat-contact-bio-empty">{t("noMembersFound")}</p>

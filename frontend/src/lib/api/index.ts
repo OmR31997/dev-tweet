@@ -6,4 +6,5 @@ export { resolveImageUrl } from "./normalizers";
 export * from "./hooks";
 export { queryKeys } from "./query-keys";
 export * from "./services";
+export { isOptimisticId, createOptimisticId } from "./optimistic";
 export type * from "./types";

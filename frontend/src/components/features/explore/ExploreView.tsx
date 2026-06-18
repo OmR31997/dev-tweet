@@ -3,13 +3,12 @@
 import { FollowButton } from "@/components/common/FollowButton";
 import { PageHeader } from "@/components/common/PageHeader";
 import { UserRow } from "@/components/common/UserRow";
+import { SearchInput } from "@/components/common/SearchInput";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { PostCard } from "@/components/features/feed";
 import { useCommentsPanel } from "@/components/features/feed/use-comments-panel";
 import { usePosts, useUsers } from "@/lib/api";
 import { useDebouncedValue } from "@/lib/use-debounce";
-import { Search } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -47,15 +46,12 @@ export function ExploreView() {
       <PageHeader title={t("title")} />
 
       <div className="border-b border-border bg-card px-5 py-4">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t("searchPlaceholder")}
-            className="h-10 pl-9"
-          />
-        </div>
+        <SearchInput
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t("searchPlaceholder")}
+          className="h-10"
+        />
       </div>
 
       {allUsers.length > 0 ? (

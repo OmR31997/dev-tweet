@@ -1,12 +1,12 @@
 "use client";
 
 import { UserAvatar } from "@/components/common/UserAvatar";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/common/SearchInput";
 import { getErrorMessage, useAddGroupMember, useUsers } from "@/lib/api";
 import { useSearchQuery } from "@/lib/use-search-query";
 import { cn } from "@/lib/utils";
 import { useAuthUser } from "@/store";
-import { Search, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function AddGroupMemberDialog({
@@ -76,16 +76,13 @@ export function AddGroupMemberDialog({
         </div>
 
         <div className="border-b border-border px-4 py-3">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search contacts…"
-              className="h-10 pl-9"
-              autoFocus
-            />
-          </div>
+          <SearchInput
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search contacts…"
+            className="h-10"
+            autoFocus
+          />
           {error ? (
             <p className="mt-2 text-sm text-destructive">{error}</p>
           ) : null}
