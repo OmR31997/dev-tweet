@@ -32,11 +32,15 @@ export class PostsService {
   }
 
   async feed() {
-    return this.postModel.find().sort({ createdAt: -1 }).limit(100).lean();
+    const posts = await this.postModel.find().sort({ createdAt: -1 }).limit(100).lean();
+    return this.enrichRepostMedia(posts);
   }
 
-  findById(postId: string) {
-    return this.postModel.findById(postId).lean();
+  async findById(postId: string) {
+    const post = await this.postModel.findById(postId).lean();
+    if (!post) return null;
+    const [enriched] = await this.enrichRepostMedia([post]);
+    return enriched;
   }
 
   async adjustCommentCount(postId: string, delta: number) {
@@ -75,13 +79,15 @@ export class PostsService {
     if (!q) return [];
     const safeLimit = Math.max(1, Math.min(limit, 100));
     const regex = new RegExp(this.escapeRegex(q), 'i');
-    return this.postModel
-      .find({
-        $or: [{ content: regex }, { authorName: regex }, { tags: regex }],
-      })
-      .sort({ createdAt: -1 })
-      .limit(safeLimit)
-      .lean();
+    return this.enrichRepostMedia(
+      await this.postModel
+        .find({
+          $or: [{ content: regex }, { authorName: regex }, { tags: regex }],
+        })
+        .sort({ createdAt: -1 })
+        .limit(safeLimit)
+        .lean(),
+    );
   }
 
   async toggleLike(postId: string, userId: string) {
@@ -128,6 +134,7 @@ export class PostsService {
       authorPhoto: target.authorPhoto,
       content: target.content,
       imageIds: target.imageIds ?? [],
+      attachments: target.attachments ?? [],
       tags: target.tags ?? [],
       repostOf: targetId,
       repostedById: reposter.userId,
@@ -150,6 +157,45 @@ export class PostsService {
     }
     await this.postModel.deleteOne({ _id: postId });
     return { ok: true, deletedImages: imageIds.length };
+  }
+
+  private async enrichRepostMedia<T extends { repostOf?: string; attachments?: Post['attachments']; imageIds?: string[] }>(
+    posts: T[],
+  ): Promise<T[]> {
+    const repostIds = [
+      ...new Set(
+        posts
+          .filter((post) => post.repostOf && !(post.attachments?.length))
+          .map((post) => post.repostOf as string),
+      ),
+    ];
+    if (repostIds.length === 0) return posts;
+
+    const originals = await this.postModel
+      .find({ _id: { $in: repostIds } })
+      .select('attachments imageIds')
+      .lean();
+
+    const mediaById = new Map(
+      originals.map((original) => [
+        String(original._id),
+        {
+          attachments: original.attachments ?? [],
+          imageIds: original.imageIds ?? [],
+        },
+      ]),
+    );
+
+    return posts.map((post) => {
+      if (!post.repostOf || post.attachments?.length) return post;
+      const original = mediaById.get(post.repostOf);
+      if (!original) return post;
+      return {
+        ...post,
+        attachments: original.attachments,
+        imageIds: post.imageIds?.length ? post.imageIds : original.imageIds,
+      };
+    });
   }
 
   private normalizeTags(inputTags: string[] | undefined, content: string): string[] {

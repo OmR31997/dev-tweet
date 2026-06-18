@@ -36,6 +36,45 @@
     @apply flex min-h-0 flex-1 flex-col overflow-hidden;
   }
 
+  /* Mobile PWA shell — keep chrome pinned while content scrolls */
+  .app-shell {
+    @apply flex h-svh w-full overflow-hidden bg-muted/30;
+  }
+
+  .app-shell-column {
+    @apply flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden;
+  }
+
+  .app-main-scroll {
+    @apply min-h-0 flex-1 overflow-y-auto overscroll-y-contain;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: var(--mobile-nav-safe-height);
+  }
+
+  .app-main-fill {
+    @apply flex min-h-0 flex-1 flex-col overflow-hidden;
+  }
+
+  .app-main-fill > * {
+    @apply min-h-0 flex-1;
+  }
+
+  @media (min-width: 768px) {
+    .app-main-scroll {
+      padding-bottom: 0;
+    }
+  }
+
+  .mobile-bottom-nav {
+    height: var(--mobile-nav-safe-height);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  [data-comments-panel] {
+    scroll-margin-top: calc(4rem + env(safe-area-inset-top, 0px));
+    scroll-margin-bottom: var(--mobile-nav-safe-height);
+  }
+
   /* Chat split (WhatsApp Web / Slack style on large screens) */
   .chat-split {
     @apply flex min-h-0 flex-1 flex-col md:flex-row;

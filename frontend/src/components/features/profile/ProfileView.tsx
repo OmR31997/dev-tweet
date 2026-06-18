@@ -17,10 +17,13 @@ import { githubProfileUrl } from "@/lib/github/parse-username";
 import { useAuthUser } from "@/store";
 import { GitBranch, MessageCircle, Settings } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
 import { EditProfileDialog } from "./EditProfileDialog";
 import { FollowListDialog, type FollowListTab } from "./FollowListDialog";
 import { GitHubActivityCard } from "./GitHubActivityCard";
+
+const PROFILE_POSTS_PREVIEW = 5;
 
 function Stat({
   label,
@@ -103,13 +106,19 @@ function ProfileHeaderActions({ user }: { user: AuthUser }) {
 }
 
 export function ProfileView({ userId }: { userId: string }) {
+  const t = useTranslations("Profile");
   const me = useAuthUser();
   const userQuery = useUser(userId);
   const postsQuery = usePosts(undefined, 50, { poll: false });
   const user = userQuery.data;
   const [followListOpen, setFollowListOpen] = useState(false);
   const [followListTab, setFollowListTab] = useState<FollowListTab>("followers");
+  const [showAllPosts, setShowAllPosts] = useState(false);
   const commentsPanel = useCommentsPanel();
+
+  useEffect(() => {
+    setShowAllPosts(false);
+  }, [userId]);
 
   const openFollowList = (tab: FollowListTab) => {
     setFollowListTab(tab);
@@ -121,6 +130,11 @@ export function ProfileView({ userId }: { userId: string }) {
       (p) =>
         (p.authorId === userId && !p.repostOf) || p.repostedById === userId,
     ) ?? [];
+
+  const visiblePosts = showAllPosts
+    ? userPosts
+    : userPosts.slice(0, PROFILE_POSTS_PREVIEW);
+  const hasMorePosts = userPosts.length > PROFILE_POSTS_PREVIEW;
 
   const meta = user
     ? [user.branch, user.college, user.year].filter(Boolean).join(" · ")
@@ -201,20 +215,34 @@ export function ProfileView({ userId }: { userId: string }) {
             ) : null}
 
             <h3 className="px-5 pb-1 pt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Posts
+              {t("posts")}
             </h3>
             {userPosts.length > 0 ? (
-              userPosts.map((post) => (
-                <PostCard
-                  key={post.id}
-                  post={post}
-                  commentsOpen={commentsPanel.isOpen(post.id)}
-                  onToggleComments={() => commentsPanel.toggle(post.id)}
-                />
-              ))
+              <>
+                {visiblePosts.map((post) => (
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    commentsOpen={commentsPanel.isOpen(post.id)}
+                    onToggleComments={() => commentsPanel.toggle(post.id)}
+                  />
+                ))}
+                {hasMorePosts ? (
+                  <div className="border-b border-border px-5 py-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setShowAllPosts((open) => !open)}
+                    >
+                      {showAllPosts ? t("showLess") : t("viewAll")}
+                    </Button>
+                  </div>
+                ) : null}
+              </>
             ) : (
               <p className="px-5 py-6 text-sm text-muted-foreground">
-                No posts yet.
+                {t("noPosts")}
               </p>
             )}
           </>

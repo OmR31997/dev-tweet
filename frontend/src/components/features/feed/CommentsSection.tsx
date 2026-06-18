@@ -217,7 +217,10 @@ export function CommentsSection({ post }: { post: Post }) {
   };
 
   return (
-    <div className="border-t border-border bg-muted/20 px-5 py-3">
+    <div
+      data-comments-panel={post.id}
+      className="border-t border-border bg-muted/20 px-5 py-3"
+    >
       <form onSubmit={onSubmit} className="mb-3 flex items-center gap-2">
         <UserAvatar
           name={me?.displayName}

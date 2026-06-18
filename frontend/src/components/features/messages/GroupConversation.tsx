@@ -157,9 +157,9 @@ export function GroupConversation({
   }
 
   return (
-    <div className="flex h-full min-w-0">
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <header className="relative z-30 flex shrink-0 items-center gap-3 border-b border-border bg-background/80 px-4 py-3 backdrop-blur">
+    <div className="flex h-full min-h-0 min-w-0 overflow-hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <header className="chat-mobile-header flex items-center gap-3 border-b border-border px-4 py-3">
         {selection.selectionMode ? (
           <>
             <button type="button" onClick={selection.exitSelection}>

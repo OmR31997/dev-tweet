@@ -348,7 +348,9 @@
     "matchingPosts": "मिलती पोस्ट",
     "recentPosts": "हाल की पोस्ट",
     "searching": "खोजा जा रहा है…",
-    "noPostsFound": "कोई पोस्ट नहीं मिली।"
+    "noPostsFound": "कोई पोस्ट नहीं मिली।",
+    "viewAll": "सभी देखें",
+    "showLess": "कम देखें"
   },
   "Roadmaps": {
     "title": "रोडमैप",
@@ -429,6 +431,8 @@
     "loadingProfile": "प्रोफ़ाइल लोड हो रही है…",
     "profileNotFound": "प्रोफ़ाइल नहीं मिली।",
     "noPosts": "अभी कोई पोस्ट नहीं।",
+    "viewAll": "सभी देखें",
+    "showLess": "कम देखें",
     "settings": "सेटिंग्स",
     "edit": {
       "title": "प्रोफ़ाइल संपादित करें",
@@ -456,7 +460,9 @@
       "followers": "{count, plural, one {# फ़ॉलोअर} other {# फ़ॉलोअर्स}}",
       "following": "{count, plural, one {# फ़ॉलोइंग} other {# फ़ॉलोइंग}}",
       "recentActivity": "हाल की गतिविधि",
-      "noActivity": "GitHub पर कोई हालिया सार्वजनिक गतिविधि नहीं।"
+      "noActivity": "GitHub पर कोई हालिया सार्वजनिक गतिविधि नहीं।",
+      "viewAll": "सभी देखें",
+      "showLess": "कम देखें"
     }
   },
   "Common": {

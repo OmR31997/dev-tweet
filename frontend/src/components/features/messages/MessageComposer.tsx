@@ -225,7 +225,7 @@ export function MessageComposer({
   };
 
   return (
-    <div className="border-t border-border bg-card">
+    <div className="chat-composer-bar border-t border-border bg-card">
       {replyTo ? (
         <ReplyPreview reply={replyTo} onCancel={() => onCancelReply?.()} />
       ) : null}

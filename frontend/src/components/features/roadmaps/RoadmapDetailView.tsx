@@ -61,7 +61,7 @@ export function RoadmapDetailView({ slug }: { slug: string }) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background/80 px-4 py-3 backdrop-blur">
+      <header className="chat-mobile-header flex shrink-0 items-center gap-3 border-b border-border px-4 py-3">
         <Button asChild variant="ghost" size="icon" className="size-9 shrink-0">
           <Link href="/roadmaps" aria-label={t("backToCatalog")}>
             <ArrowLeft className="size-4" />

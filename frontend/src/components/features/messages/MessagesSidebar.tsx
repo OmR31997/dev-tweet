@@ -140,8 +140,8 @@ export function MessagesSidebar() {
 
   return (
     <>
-      <div className="relative flex h-full w-full flex-col border-r border-border bg-card">
-        <div className="border-b border-border px-4 py-4">
+      <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden border-r border-border bg-card">
+        <div className="chat-inbox-header border-b border-border px-4 pb-4">
           {showArchived ? (
             <button
               type="button"
@@ -178,7 +178,7 @@ export function MessagesSidebar() {
           </div>
         </div>
 
-        <div className="chat-list-scroll flex-1 overflow-y-auto pb-20">
+        <div className="chat-list-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain pb-[var(--mobile-nav-safe-height)] md:pb-0">
           {!showArchived && archivedTotal > 0 ? (
             <button
               type="button"
@@ -304,7 +304,7 @@ export function MessagesSidebar() {
         </div>
 
         {!showArchived ? (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-end p-4">
+          <div className="pointer-events-none absolute inset-x-0 bottom-[var(--mobile-nav-safe-height)] flex justify-end p-4 md:bottom-0">
             <button
               type="button"
               onClick={() => setNewChatOpen(true)}

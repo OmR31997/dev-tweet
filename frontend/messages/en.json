@@ -348,7 +348,9 @@
     "matchingPosts": "Matching posts",
     "recentPosts": "Recent posts",
     "searching": "Searching…",
-    "noPostsFound": "No posts found."
+    "noPostsFound": "No posts found.",
+    "viewAll": "View all",
+    "showLess": "Show less"
   },
   "Roadmaps": {
     "title": "Roadmaps",
@@ -429,6 +431,8 @@
     "loadingProfile": "Loading profile…",
     "profileNotFound": "Profile not found.",
     "noPosts": "No posts yet.",
+    "viewAll": "View all",
+    "showLess": "Show less",
     "settings": "Settings",
     "edit": {
       "title": "Edit profile",
@@ -456,7 +460,9 @@
       "followers": "{count, plural, one {# follower} other {# followers}}",
       "following": "{count, plural, one {# following} other {# following}}",
       "recentActivity": "Recent activity",
-      "noActivity": "No recent public activity on GitHub."
+      "noActivity": "No recent public activity on GitHub.",
+      "viewAll": "View all",
+      "showLess": "Show less"
     }
   },
   "Common": {

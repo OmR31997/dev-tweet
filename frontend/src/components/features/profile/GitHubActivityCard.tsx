@@ -13,7 +13,11 @@ import {
   Star,
 } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const GITHUB_ACTIVITY_PREVIEW = 5;
 
 function eventIcon(type: string): LucideIcon {
   if (type === "PushEvent") return GitCommit;
@@ -34,6 +38,11 @@ export function GitHubActivityCard({ username }: { username: string }) {
   const formatter = useFormatter();
   const activity = useGithubActivity(username);
   const profileUrl = githubProfileUrl(username);
+  const [showAllActivity, setShowAllActivity] = useState(false);
+
+  useEffect(() => {
+    setShowAllActivity(false);
+  }, [username]);
 
   return (
     <section className="border-b border-border bg-card px-5 py-5">
@@ -128,36 +137,51 @@ export function GitHubActivityCard({ username }: { username: string }) {
                 {t("recentActivity")}
               </h4>
               {activity.data.events.length > 0 ? (
-                <ul className="space-y-2">
-                  {activity.data.events.map((event) => {
-                    const Icon = eventIcon(event.type);
-                    return (
-                      <li
-                        key={event.id}
-                        className="flex gap-3 rounded-lg border border-border bg-background px-3 py-2.5"
-                      >
-                        <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm leading-snug">{event.summary}</p>
-                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                            <a
-                              href={event.repoUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="truncate hover:underline"
-                            >
-                              {event.repoName}
-                            </a>
-                            <span aria-hidden>·</span>
-                            <time dateTime={event.createdAt}>
-                              {relativeTime(formatter, event.createdAt)}
-                            </time>
+                <>
+                  <ul className="space-y-2">
+                    {(showAllActivity
+                      ? activity.data.events
+                      : activity.data.events.slice(0, GITHUB_ACTIVITY_PREVIEW)
+                    ).map((event) => {
+                      const Icon = eventIcon(event.type);
+                      return (
+                        <li
+                          key={event.id}
+                          className="flex gap-3 rounded-lg border border-border bg-background px-3 py-2.5"
+                        >
+                          <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm leading-snug">{event.summary}</p>
+                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                              <a
+                                href={event.repoUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="truncate hover:underline"
+                              >
+                                {event.repoName}
+                              </a>
+                              <span aria-hidden>·</span>
+                              <time dateTime={event.createdAt}>
+                                {relativeTime(formatter, event.createdAt)}
+                              </time>
+                            </div>
                           </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {activity.data.events.length > GITHUB_ACTIVITY_PREVIEW ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mt-3 w-full"
+                      onClick={() => setShowAllActivity((open) => !open)}
+                    >
+                      {showAllActivity ? t("showLess") : t("viewAll")}
+                    </Button>
+                  ) : null}
+                </>
               ) : (
                 <p className="text-sm text-muted-foreground">{t("noActivity")}</p>
               )}

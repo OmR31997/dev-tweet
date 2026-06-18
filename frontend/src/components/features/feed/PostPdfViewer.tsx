@@ -4,9 +4,11 @@ import type { PostAttachment } from "@/lib/api";
 import { fetchFileBlob } from "@/lib/api/fetch-file-blob";
 import { formatFileSize, resolveChatFileUrl } from "@/lib/api/normalizers";
 import { cn } from "@/lib/utils";
-import { Download, FileText, Loader2 } from "lucide-react";
+import { Download, FileText, Loader2, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { PdfPageCarousel } from "./PdfPageCarousel";
 
 export function postFileDownloadUrl(fileId: string) {
   return `${resolveChatFileUrl(fileId)}?download=1`;
@@ -59,6 +61,66 @@ export function PostDocumentShell({
   );
 }
 
+function PdfFullscreenViewer({
+  open,
+  onClose,
+  data,
+  filename,
+  fileId,
+}: {
+  open: boolean;
+  onClose: () => void;
+  data: Uint8Array;
+  filename: string;
+  fileId: string;
+}) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open, onClose]);
+
+  if (!open || typeof document === "undefined") return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label={filename}
+    >
+      <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+        <button
+          type="button"
+          onClick={onClose}
+          className="grid size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          aria-label="Close preview"
+        >
+          <X className="size-5" />
+        </button>
+        <p className="min-w-0 flex-1 truncate text-sm font-medium">{filename}</p>
+        <a
+          href={postFileDownloadUrl(fileId)}
+          className="grid size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          aria-label={`Download ${filename}`}
+        >
+          <Download className="size-4" />
+        </a>
+      </div>
+      <div className="min-h-0 flex-1">
+        <PdfPageCarousel data={data} className="h-full" showNav />
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 export function PostPdfViewer({
   attachment,
   compact,
@@ -66,28 +128,24 @@ export function PostPdfViewer({
   attachment: PostAttachment;
   compact?: boolean;
 }) {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [pdfData, setPdfData] = useState<Uint8Array | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const fileUrl = resolveChatFileUrl(attachment.fileId);
 
   useEffect(() => {
     let cancelled = false;
-    let objectUrl: string | null = null;
 
     setLoading(true);
     setError(false);
-    setBlobUrl(null);
+    setPdfData(null);
 
     fetchFileBlob(fileUrl)
-      .then((blob) => {
+      .then(async (blob) => {
         if (cancelled) return;
-        const pdfBlob =
-          blob.type === "application/pdf"
-            ? blob
-            : new Blob([blob], { type: "application/pdf" });
-        objectUrl = URL.createObjectURL(pdfBlob);
-        setBlobUrl(objectUrl);
+        const buffer = await blob.arrayBuffer();
+        setPdfData(new Uint8Array(buffer));
       })
       .catch(() => {
         if (!cancelled) setError(true);
@@ -98,7 +156,6 @@ export function PostPdfViewer({
 
     return () => {
       cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [fileUrl]);
 
@@ -115,19 +172,30 @@ export function PostPdfViewer({
             <Loader2 className="size-4 animate-spin" />
             Loading document…
           </div>
-        ) : error || !blobUrl ? (
+        ) : error || !pdfData ? (
           <p className="px-4 py-16 text-center text-sm text-muted-foreground">
             Could not preview this PDF. Use download to open the file.
           </p>
         ) : (
-          <iframe
-            title={attachment.filename}
-            src={`${blobUrl}#toolbar=0&navpanes=0&view=FitH`}
-            className={cn(
-              "w-full border-0 bg-white",
-              compact ? "h-56" : "h-[min(70vh,520px)]",
-            )}
-          />
+          <>
+            <PdfPageCarousel data={pdfData} compact={compact} />
+            <div className="border-t border-border px-4 py-3 md:hidden">
+              <button
+                type="button"
+                onClick={() => setFullscreen(true)}
+                className="w-full rounded-full bg-sky-400/90 py-2.5 text-sm font-semibold text-slate-900 transition-colors hover:bg-sky-400"
+              >
+                Open
+              </button>
+            </div>
+            <PdfFullscreenViewer
+              open={fullscreen}
+              onClose={() => setFullscreen(false)}
+              data={pdfData}
+              filename={attachment.filename}
+              fileId={attachment.fileId}
+            />
+          </>
         )}
       </div>
     </PostDocumentShell>

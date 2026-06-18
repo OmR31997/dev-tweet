@@ -2,6 +2,7 @@
 
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { OptionsMenu } from "@/components/common/OptionsMenu";
+import { PostAuthorFollowButton } from "@/components/common/PostAuthorFollowButton";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import {
   useDeletePost,
@@ -173,6 +174,10 @@ export function PostCard({
                 · {timeAgo(post.createdAt)}
               </span>
 
+              <span className="ml-auto shrink-0">
+                {reposterId ? <PostAuthorFollowButton authorId={reposterId} /> : null}
+              </span>
+
               {isOwnRepost ? (
                 <OptionsMenu
                   open={menuOpen}
@@ -216,6 +221,9 @@ export function PostCard({
                     >
                       {post.authorName}
                     </Link>
+                    <span className="ml-auto shrink-0">
+                      <PostAuthorFollowButton authorId={post.authorId} />
+                    </span>
                   </div>
                   <PostContent content={post.content} />
                   <PostMedia post={post} compact />
@@ -268,6 +276,10 @@ export function PostCard({
             </Link>
             <span className="text-sm text-muted-foreground">
               · {timeAgo(post.createdAt)}
+            </span>
+
+            <span className="ml-auto shrink-0">
+              <PostAuthorFollowButton authorId={post.authorId} />
             </span>
 
             {canManage ? (

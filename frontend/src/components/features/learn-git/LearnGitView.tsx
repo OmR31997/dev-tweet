@@ -10,7 +10,7 @@ export function LearnGitView() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-background/80 px-4 py-3 backdrop-blur">
+      <header className="chat-mobile-header flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="min-w-0">
           <h1 className="truncate text-base font-semibold">{t("title")}</h1>
           <p className="truncate text-xs text-muted-foreground">{t("subtitle")}</p>
@@ -36,7 +36,7 @@ export function LearnGitView() {
         referrerPolicy="no-referrer-when-downgrade"
       />
 
-      <footer className="shrink-0 border-t border-border px-4 py-2 text-center text-xs text-muted-foreground">
+      <footer className="chat-composer-bar shrink-0 border-t border-border px-4 py-2 text-center text-xs text-muted-foreground">
         {t.rich("attribution", {
           link: (chunks) => (
             <a

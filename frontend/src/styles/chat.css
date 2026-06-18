@@ -573,6 +573,36 @@
   }
 
   /* ─── Conversation panel ─── */
+  .chat-inbox-header {
+    flex-shrink: 0;
+    padding-top: max(1rem, env(safe-area-inset-top, 0px));
+  }
+
+  @media (min-width: 768px) {
+    .chat-inbox-header {
+      padding-top: 1rem;
+    }
+  }
+
+  .chat-mobile-header {
+    position: relative;
+    z-index: 30;
+    flex-shrink: 0;
+    background: var(--background);
+    padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+  }
+
+  @media (min-width: 768px) {
+    .chat-mobile-header {
+      padding-top: 0.75rem;
+    }
+  }
+
+  .chat-composer-bar {
+    flex-shrink: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
   .chat-conversation-wrap {
     display: flex;
     min-width: 0;

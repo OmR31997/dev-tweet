@@ -36,7 +36,7 @@ export function FeedFloatingAction({
         type="button"
         onClick={() => setDialogOpen(true)}
         aria-label="Create post"
-        className={`fixed bottom-20 right-5 z-40 grid size-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all hover:scale-105 hover:shadow-xl sm:bottom-8 ${
+        className={`fixed right-5 z-40 grid size-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all hover:scale-105 hover:shadow-xl max-md:bottom-[calc(var(--mobile-nav-safe-height)+1rem)] md:bottom-8 ${
           showFab
             ? "pointer-events-auto translate-y-0 opacity-100"
             : "pointer-events-none translate-y-4 opacity-0"

@@ -84,7 +84,7 @@ export function CourseView({ initialPageId }: { initialPageId?: string }) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background/80 px-4 py-3 backdrop-blur">
+      <header className="chat-mobile-header flex shrink-0 items-center gap-3 border-b border-border px-4 py-3">
         {history.length > 0 ? (
           <Button
             type="button"

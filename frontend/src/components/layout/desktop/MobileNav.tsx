@@ -6,6 +6,7 @@ import {
   useNavItems,
   type NavItem,
 } from "@/components/layout/useNavItems";
+import { isMobileNavHidden } from "@/lib/app-shell-routes";
 import { cn } from "@/lib/utils";
 import { Wrench } from "lucide-react";
 import Link from "next/link";
@@ -65,17 +66,12 @@ export function MobileNav() {
   }, [pathname]);
 
   // Immersive conversation / roadmap viewer: hide the tab bar.
-  if (
-    /^\/messages\/.+/.test(pathname) ||
-    /^\/roadmaps\/.+/.test(pathname) ||
-    pathname.startsWith("/course") ||
-    pathname.startsWith("/learn-git")
-  ) {
+  if (isMobileNavHidden(pathname)) {
     return null;
   }
 
   return (
-    <nav className="relative flex shrink-0 items-stretch border-t border-border bg-background md:hidden">
+    <nav className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-50 flex shrink-0 items-stretch border-t border-border bg-background md:hidden">
       {toolsOpen ? (
         <>
           <button

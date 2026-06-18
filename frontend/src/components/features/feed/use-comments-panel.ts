@@ -2,6 +2,19 @@
 
 import { useEffect, useState } from "react";
 
+function scrollToComments(postId: string) {
+  const panel = document.querySelector(`[data-comments-panel="${postId}"]`);
+  const article = document.querySelector(`[data-post-comments="${postId}"]`);
+  const target = panel ?? article;
+  if (!target) return;
+
+  target.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+    inline: "nearest",
+  });
+}
+
 export function useCommentsPanel() {
   const [openPostId, setOpenPostId] = useState<string | null>(null);
 
@@ -19,6 +32,14 @@ export function useCommentsPanel() {
 
     document.addEventListener("mousedown", onPointerDown);
     return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [openPostId]);
+
+  useEffect(() => {
+    if (!openPostId) return;
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => scrollToComments(openPostId));
+    });
   }, [openPostId]);
 
   return {
