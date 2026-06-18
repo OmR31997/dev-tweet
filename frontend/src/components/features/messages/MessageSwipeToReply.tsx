@@ -3,14 +3,16 @@
 import { cn } from "@/lib/utils";
 import { Reply } from "lucide-react";
 import type { ReactNode } from "react";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useDoubleTap } from "./use-double-tap";
+import { useLongPress } from "./use-long-press";
 import { useSwipeToReply } from "./use-swipe-to-reply";
 
 export function MessageSwipeToReply({
   mine,
   disabled,
   onReply,
+  onLongPress,
   onDoubleTap,
   onDoubleClick,
   children,
@@ -18,14 +20,12 @@ export function MessageSwipeToReply({
   mine: boolean;
   disabled?: boolean;
   onReply: () => void;
+  onLongPress?: () => void;
   onDoubleTap?: () => void;
   onDoubleClick?: (e: React.MouseEvent) => void;
   children: ReactNode;
 }) {
   const swipe = useSwipeToReply({ mine, disabled, onReply });
-  const { registerPointerUp, reset: resetDoubleTap } = useDoubleTap(() => {
-    onDoubleTap?.();
-  });
   const {
     reset,
     offset,
@@ -37,19 +37,57 @@ export function MessageSwipeToReply({
     didMove,
   } = swipe;
 
+  const { registerPointerUp, reset: resetDoubleTap } = useDoubleTap(() => {
+    onDoubleTap?.();
+  });
+
+  const handleLongPress = useCallback(() => {
+    reset();
+    resetDoubleTap();
+    onLongPress?.();
+  }, [onLongPress, reset, resetDoubleTap]);
+
+  const longPress = useLongPress(handleLongPress);
+
   useEffect(() => {
     if (disabled) {
       reset();
       resetDoubleTap();
+      longPress.reset();
     }
-  }, [disabled, reset, resetDoubleTap]);
+  }, [disabled, longPress, reset, resetDoubleTap]);
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    onPointerDown(event);
+    if (!disabled && onLongPress) {
+      longPress.onPointerDown(event);
+    }
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    onPointerMove(event);
+    if (!disabled && onLongPress) {
+      longPress.onPointerMove(event);
+    }
+  };
 
   const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
     const moved = didMove();
+    const longPressed = onLongPress ? longPress.consumeLongPress() : false;
+
     onPointerUp(event);
-    if (!disabled && onDoubleTap) {
+    if (!disabled && onLongPress) {
+      longPress.onPointerUp();
+    }
+
+    if (!disabled && onDoubleTap && !longPressed) {
       registerPointerUp(event, moved);
     }
+  };
+
+  const handleContextMenu = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (disabled) return;
+    event.preventDefault();
   };
 
   return (
@@ -76,10 +114,11 @@ export function MessageSwipeToReply({
         style={
           disabled ? undefined : { transform: `translate3d(${offset}px, 0, 0)` }
         }
-        onPointerDown={disabled ? undefined : onPointerDown}
-        onPointerMove={disabled ? undefined : onPointerMove}
+        onPointerDown={disabled ? undefined : handlePointerDown}
+        onPointerMove={disabled ? undefined : handlePointerMove}
         onPointerUp={disabled ? undefined : handlePointerUp}
         onPointerCancel={disabled ? undefined : handlePointerUp}
+        onContextMenu={handleContextMenu}
         onDoubleClick={onDoubleClick}
       >
         {children}

@@ -1,6 +1,8 @@
 "use client";
 
 import { queryKeys, type UserPresence } from "@/lib/api";
+import { replaceMessageInCaches } from "@/lib/api/message-cache";
+import { normalizeMessage } from "@/lib/api/normalizers";
 import { getCurrentUserId } from "@/lib/api/auth-token";
 import { connectSocket, disconnectSocket } from "@/lib/socket";
 import { useAccessToken } from "@/store";
@@ -85,7 +87,16 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       queryClient.invalidateQueries({ queryKey: queryKeys.inbox.all });
     });
 
-    socket.on("message.updated", () => {
+    socket.on("message.updated", (payload: unknown) => {
+      try {
+        const updated = normalizeMessage(payload);
+        if (updated.id) {
+          replaceMessageInCaches(queryClient, updated);
+          return;
+        }
+      } catch {
+        // Fall back to invalidating if payload shape is unexpected.
+      }
       queryClient.invalidateQueries({ queryKey: queryKeys.messages.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.conversations.all });
     });

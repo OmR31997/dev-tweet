@@ -11,6 +11,13 @@ import {
   replaceOptimisticMessages,
 } from "../optimistic";
 import { realtimeRefetchInterval } from "../query-polling";
+import {
+  patchMessageInCaches,
+  replaceMessageInCaches,
+  restoreMessageListSnapshots,
+  snapshotMessageListCaches,
+  toggleReactionOnMessage,
+} from "../message-cache";
 import { queryKeys } from "../query-keys";
 import { messageService } from "../services/message.service";
 import type { ForwardMessagesDto, Message, SendMessageDto } from "../types";
@@ -151,45 +158,19 @@ export function useToggleMessageReaction() {
       await queryClient.cancelQueries({ queryKey: queryKeys.messages.all });
       await queryClient.cancelQueries({ queryKey: queryKeys.conversations.all });
 
-      const snapshots = [
-        ...queryClient.getQueriesData<Message[]>({
-          queryKey: queryKeys.messages.all,
-        }),
-        ...queryClient.getQueriesData<Message[]>({
-          queryKey: queryKeys.conversations.all,
-        }),
-      ];
+      const snapshots = snapshotMessageListCaches(queryClient);
 
-      const patch = (messages: Message[] | undefined) =>
-        messages?.map((message) => {
-          if (message.id !== id) return message;
-          const reactions = message.reactions ?? [];
-          const existing = reactions.find(
-            (reaction) => reaction.userId === meId && reaction.emoji === emoji,
-          );
-          return {
-            ...message,
-            reactions: existing
-              ? reactions.filter((reaction) => reaction !== existing)
-              : [...reactions, { userId: meId, emoji }],
-          };
-        });
-
-      queryClient.setQueriesData<Message[]>(
-        { queryKey: queryKeys.messages.all },
-        patch,
-      );
-      queryClient.setQueriesData<Message[]>(
-        { queryKey: queryKeys.conversations.all },
-        patch,
+      patchMessageInCaches(queryClient, id, (message) =>
+        toggleReactionOnMessage(message, meId, emoji),
       );
 
       return { snapshots };
     },
+    onSuccess: (updatedMessage) => {
+      replaceMessageInCaches(queryClient, updatedMessage);
+    },
     onError: (_error, _vars, context) => {
-      for (const [key, data] of context?.snapshots ?? []) {
-        queryClient.setQueryData(key, data);
-      }
+      restoreMessageListSnapshots(queryClient, context?.snapshots);
     },
     onSettled: () => {
       void queryClient.invalidateQueries({

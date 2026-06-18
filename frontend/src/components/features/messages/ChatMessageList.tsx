@@ -1,6 +1,7 @@
 "use client";
 
 import type { Message } from "@/lib/api";
+import { isOptimisticId } from "@/lib/api/optimistic";
 import { chatDateLabel, chatDayKey } from "@/lib/format";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChatDateDivider } from "./ChatDateDivider";
@@ -175,7 +176,9 @@ export function ChatMessageList({
             highlighted={highlightedId === message.id}
             onToggleSelect={() => onToggleSelect(message.id)}
             onEnterSelection={() => onEnterSelection(message.id)}
-            onReact={(emoji) => onReact(message.id, emoji)}
+            onReact={(emoji) => {
+              if (!isOptimisticId(message.id)) onReact(message.id, emoji);
+            }}
             onReply={() => onReply(message)}
             onJumpToReply={() => jumpToReply(message.replyToId)}
             onForward={() => onForward(message.id)}

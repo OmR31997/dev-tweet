@@ -58,11 +58,11 @@ function ReactionPill({
       type="button"
       {...tap}
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs text-foreground touch-manipulation",
-        active ? "border-primary bg-primary/10" : "border-border bg-card",
+        "chat-message-reaction-pill touch-manipulation",
+        active && "chat-message-reaction-pill--active",
       )}
     >
-      <span>{emoji}</span>
+      <span className="chat-message-reaction-emoji">{emoji}</span>
       <span>{count}</span>
     </button>
   );
@@ -236,6 +236,7 @@ export function MessageBubble({
   const reactionSummary = useMemo(() => {
     const map = new Map<string, number>();
     for (const reaction of message.reactions ?? []) {
+      if (!reaction.emoji) continue;
       map.set(reaction.emoji, (map.get(reaction.emoji) ?? 0) + 1);
     }
     return Array.from(map.entries());
@@ -321,6 +322,13 @@ export function MessageBubble({
   };
 
   const handleDoubleTap = () => {
+    if (selectionMode) return;
+    suppressClickRef.current = true;
+    bubbleWrapRef.current?.blur();
+    openMenuAtBubble();
+  };
+
+  const handleLongPress = () => {
     if (selectionMode) return;
     suppressClickRef.current = true;
     bubbleWrapRef.current?.blur();
@@ -426,6 +434,7 @@ export function MessageBubble({
           mine={mine}
           disabled={swipeDisabled}
           onReply={onReply}
+          onLongPress={handleLongPress}
           onDoubleTap={handleDoubleTap}
           onDoubleClick={handleDoubleClick}
         >
@@ -544,12 +553,7 @@ export function MessageBubble({
           </div>
 
           {reactionSummary.length > 0 ? (
-            <div
-              className={cn(
-                "mt-0.5 flex flex-wrap gap-0.5",
-                mine ? "justify-end" : "justify-start",
-              )}
-            >
+            <div className="chat-message-reactions">
               {reactionSummary.map(([emoji, count]) => (
                 <ReactionPill
                   key={emoji}
