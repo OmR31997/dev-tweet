@@ -14,12 +14,11 @@ import { ConfigService } from '@nestjs/config';
 import { MessagesService } from '../../messages/messages.service';
 import { RealtimeService } from '../../events/realtime.service';
 import { PresenceService } from '../../events/presence.service';
+import { getClientOriginsFromEnv } from '../../config/client-origin';
 
-function resolveCorsOrigin(): string[] | string {
-  const raw = process.env.CLIENT_ORIGIN;
-  if (!raw) return ['http://localhost:3000'];
-  const list = raw.split(',').map((o) => o.trim()).filter(Boolean);
-  return list.length > 0 ? list : ['http://localhost:3000'];
+function resolveCorsOrigin(): string[] | boolean {
+  const origins = getClientOriginsFromEnv();
+  return origins.length > 0 ? origins : false;
 }
 
 @WebSocketGateway({ cors: { origin: resolveCorsOrigin(), credentials: true } })

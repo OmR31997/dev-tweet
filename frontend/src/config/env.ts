@@ -10,7 +10,6 @@ import {
   DEFAULT_API_ORIGIN,
   DEFAULT_API_PREFIX,
   DEFAULT_APP_ORIGIN,
-  DEFAULT_INGRESS_ORIGIN,
 } from "./defaults";
 
 function trimTrailingSlash(url: string) {
@@ -53,17 +52,30 @@ function resolveApiUpstreamOrigin() {
     return trimTrailingSlash(fromEnv);
   }
 
-  return useMicroservices ? DEFAULT_INGRESS_ORIGIN : DEFAULT_API_ORIGIN;
+  if (useMicroservices) {
+    throw new Error(
+      "Set API_INGRESS_URL or API_URL when API_USE_MICROSERVICES=true",
+    );
+  }
+
+  return DEFAULT_API_ORIGIN;
 }
 
 const apiUpstreamOrigin = resolveApiUpstreamOrigin();
 
 /**
- * Base URL for browser Axios calls (same-origin proxy).
- * Example: `/api` → Next.js rewrite → `http://localhost:4000/*`
+ * Base URL for browser Axios calls.
+ *
+ * - `NEXT_PUBLIC_API_URL` (optional): call the Nest API directly — best for local
+ *   dev so requests show up in the backend terminal (`http://localhost:4000`).
+ * - Otherwise use the same-origin `/api` prefix → Next.js rewrite → `API_URL`.
  */
 export function getClientApiBaseUrl(): string {
   if (typeof window !== "undefined") {
+    const direct = process.env.NEXT_PUBLIC_API_URL?.trim();
+    if (direct) {
+      return trimTrailingSlash(direct);
+    }
     return apiPrefix;
   }
 

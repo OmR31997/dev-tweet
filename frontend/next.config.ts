@@ -3,7 +3,6 @@ import createNextIntlPlugin from "next-intl/plugin";
 import {
   DEFAULT_API_ORIGIN,
   DEFAULT_API_PREFIX,
-  DEFAULT_INGRESS_ORIGIN,
 } from "./src/config/defaults";
 
 function normalizePrefix(prefix: string) {
@@ -21,13 +20,27 @@ const apiPrefix = normalizePrefix(
 
 const useMicroservices = readBool(process.env.API_USE_MICROSERVICES, false);
 
-const apiUpstreamOrigin = (
-  process.env.API_INGRESS_URL ??
-  process.env.API_URL ??
-  process.env.NEST_API_URL ??
-  process.env.NEXT_PUBLIC_API_URL ??
-  (useMicroservices ? DEFAULT_INGRESS_ORIGIN : DEFAULT_API_ORIGIN)
-).replace(/\/$/, "");
+function resolveApiUpstreamOrigin(): string {
+  const fromEnv =
+    process.env.API_INGRESS_URL ??
+    process.env.API_URL ??
+    process.env.NEST_API_URL ??
+    process.env.NEXT_PUBLIC_API_URL;
+
+  if (fromEnv) {
+    return fromEnv.replace(/\/$/, "");
+  }
+
+  if (useMicroservices) {
+    throw new Error(
+      "Set API_INGRESS_URL or API_URL when API_USE_MICROSERVICES=true",
+    );
+  }
+
+  return DEFAULT_API_ORIGIN;
+}
+
+const apiUpstreamOrigin = resolveApiUpstreamOrigin();
 
 const upstreamUsesApiPrefix =
   (process.env.API_UPSTREAM_USES_API_PREFIX ?? "false") === "true";

@@ -4,10 +4,12 @@ import {
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import ogs from 'open-graph-scraper';
 import type { ErrorResult, OgObject } from 'open-graph-scraper/types';
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
+import { getAppUrl } from '../config/app-url';
 
 export type LinkPreviewResult = {
   url: string;
@@ -23,6 +25,14 @@ const FETCH_TIMEOUT_SECONDS = 6;
 export class LinkPreviewService {
   private readonly logger = new Logger(LinkPreviewService.name);
 
+  constructor(private readonly configService: ConfigService) {}
+
+  private linkPreviewUserAgent(): string {
+    const appUrl = getAppUrl(this.configService);
+    const origin = appUrl || 'https://invalid.local';
+    return `DevTweetHubLinkPreview/1.0 (+${origin})`;
+  }
+
   async preview(rawUrl: string): Promise<LinkPreviewResult> {
     const url = await this.assertSafeUrl(rawUrl);
 
@@ -33,8 +43,7 @@ export class LinkPreviewService {
         timeout: FETCH_TIMEOUT_SECONDS,
         fetchOptions: {
           headers: {
-            'User-Agent':
-              'DevTweetHubLinkPreview/1.0 (+https://devtweethub.web.app)',
+            'User-Agent': this.linkPreviewUserAgent(),
             Accept: 'text/html,application/xhtml+xml',
           },
         },

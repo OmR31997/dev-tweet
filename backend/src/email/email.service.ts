@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/mongoose';
@@ -13,9 +13,15 @@ import {
   passwordChangedTemplate,
   welcomeTemplate,
 } from './templates/messages';
+import { resolveBrevoApiKey } from './resolve-brevo-api-key';
+import { getAppUrl } from '../config/app-url';
+
+type EmailSendResult =
+  | { ok: true }
+  | { ok: false; reason: string; status?: number; body?: string };
 
 @Injectable()
-export class EmailService {
+export class EmailService implements OnModuleInit {
   private readonly logger = new Logger(EmailService.name);
   private readonly brandName = 'DevTweetHub';
 
@@ -25,9 +31,58 @@ export class EmailService {
     @InjectModel(Notification.name) private readonly notificationModel: Model<NotificationDocument>,
   ) {}
 
+  onModuleInit() {
+    if (this.isConfigured()) {
+      this.logger.log('Transactional email provider configured (Brevo).');
+      return;
+    }
+
+    const nodeEnv = this.configService.get<string>('NODE_ENV', 'development');
+    if (nodeEnv === 'production') {
+      this.logger.error(
+        'Email provider is NOT configured. Set BREVO_API_KEY (or BRAVO_MCP_API_KEY) and EMAIL_FROM in production — password reset and welcome emails will fail.',
+      );
+      return;
+    }
+
+    this.logger.warn(
+      'Email provider not configured — set BREVO_API_KEY in .env. Password-reset links will be logged to the console in development.',
+    );
+  }
+
+  isConfigured(): boolean {
+    return Boolean(this.getApiKey());
+  }
+
+  private getApiKey(): string | undefined {
+    const raw =
+      this.configService.get<string>('BREVO_API_KEY') ??
+      this.configService.get<string>('BRAVO_MCP_API_KEY');
+    return resolveBrevoApiKey(raw);
+  }
+
+  private getApiUrl(): string {
+    return (
+      this.configService.get<string>('BREVO_API_URL') ??
+      this.configService.get<string>('BRAVO_MCP_API_URL') ??
+      'https://api.brevo.com/v3/smtp/email'
+    );
+  }
+
   private getAppUrl(): string {
-    const clientOrigin = this.configService.get<string>('CLIENT_ORIGIN', 'http://localhost:3000');
-    return clientOrigin.split(',')[0]?.trim() || 'http://localhost:3000';
+    return getAppUrl(this.configService);
+  }
+
+  private getPasswordResetBaseUrl(): string {
+    const explicit = this.configService.get<string>('PASSWORD_RESET_URL');
+    if (explicit?.trim()) {
+      return explicit.trim().replace(/\/$/, '');
+    }
+    return `${this.getAppUrl().replace(/\/$/, '')}/reset-password`;
+  }
+
+  buildPasswordResetUrl(rawToken: string): string {
+    return `${this.getPasswordResetBaseUrl()}?token=${encodeURIComponent(rawToken)}`;
   }
 
   async sendWelcomeEmail(email: string, displayName: string) {
@@ -39,13 +94,18 @@ export class EmailService {
   }
 
   async sendForgotPasswordEmail(email: string, displayName: string, rawToken: string) {
-    const resetBaseUrl = this.configService.get<string>('PASSWORD_RESET_URL', 'http://localhost:3000/reset-password');
-    const resetUrl = `${resetBaseUrl}?token=${encodeURIComponent(rawToken)}`;
-    return this.sendEmail(
+    const resetUrl = this.buildPasswordResetUrl(rawToken);
+    const result = await this.sendEmail(
       email,
       'Reset your DevTweetHub password',
       forgotPasswordTemplate(displayName, resetUrl),
     );
+
+    if (!result.ok && result.reason === 'missing_api_key') {
+      this.logDevPasswordResetLink(email, resetUrl);
+    }
+
+    return result;
   }
 
   async sendPasswordChangedEmail(email: string, displayName: string) {
@@ -81,6 +141,8 @@ export class EmailService {
 
   @Cron(CronExpression.EVERY_DAY_AT_9AM)
   async sendDailyDigests() {
+    if (!this.isConfigured()) return;
+
     const users = await this.userModel
       .find({ dailyDigestEnabled: true, emailNotificationsEnabled: true })
       .select('email displayName')
@@ -116,14 +178,23 @@ export class EmailService {
     }
   }
 
-  private async sendEmail(to: string, subject: string, html: string) {
-    const apiKey = this.configService.get<string>('BRAVO_MCP_API_KEY');
-    const apiUrl = this.configService.get<string>('BRAVO_MCP_API_URL', 'https://api.brevo.com/v3/smtp/email');
+  private logDevPasswordResetLink(email: string, resetUrl: string) {
+    const nodeEnv = this.configService.get<string>('NODE_ENV', 'development');
+    if (nodeEnv === 'production') return;
+
+    this.logger.warn(
+      `[dev] BREVO_API_KEY not set — password reset link for ${email}:\n${resetUrl}`,
+    );
+  }
+
+  private async sendEmail(to: string, subject: string, html: string): Promise<EmailSendResult> {
+    const apiKey = this.getApiKey();
+    const apiUrl = this.getApiUrl();
     const from = this.configService.get<string>('EMAIL_FROM', 'no-reply@devtweethub.com');
     const senderName = this.configService.get<string>('EMAIL_FROM_NAME', this.brandName);
 
     if (!apiKey) {
-      this.logger.warn(`BRAVO_MCP_API_KEY missing. Skipping email "${subject}" to ${to}`);
+      this.logger.warn(`BREVO_API_KEY missing. Skipping email "${subject}" to ${to}`);
       return { ok: false, reason: 'missing_api_key' };
     }
 
@@ -141,11 +212,26 @@ export class EmailService {
           htmlContent: html,
         }),
       });
+
       if (!response.ok) {
         const text = await response.text();
-        this.logger.error(`Email send failed (${response.status}) to ${to}: ${text}`);
-        return { ok: false, status: response.status, body: text };
+        let hint =
+          'Check BREVO_API_KEY, EMAIL_FROM (verified sender in Brevo), and sender domain.';
+        try {
+          const body = JSON.parse(text) as { message?: string };
+          if (body.message?.includes('unrecognised IP') || body.message?.includes('IP address')) {
+            hint =
+              'Brevo blocked this server IP. Disable IP restriction or add your IP at https://app.brevo.com/security/authorised_ips';
+          } else if (body.message) {
+            hint = body.message;
+          }
+        } catch {
+          // keep default hint
+        }
+        this.logger.error(`Email send failed (${response.status}) to ${to}: ${text}. ${hint}`);
+        return { ok: false, reason: 'provider_error', status: response.status, body: text };
       }
+
       this.logger.log(`Email sent: "${subject}" → ${to}`);
       return { ok: true };
     } catch (error) {

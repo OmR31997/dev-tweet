@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { JwtService } from '@nestjs/jwt';
 import { Model } from 'mongoose';
@@ -84,10 +84,21 @@ export class AuthService {
   }
 
   async forgotPassword(payload: ForgotPasswordDto) {
-    const user = await this.userModel.findOne({ email: payload.email.toLowerCase() });
+    const email = payload.email.toLowerCase();
+    this.logger.log(`Password reset requested for ${email}`);
+
+    if (!this.emailService.isConfigured()) {
+      throw new ServiceUnavailableException(
+        'Password reset email is not available right now. Please try again later.',
+      );
+    }
+
+    const user = await this.userModel.findOne({ email });
     if (!user) {
+      this.logger.log(`Password reset: no account found for ${email}`);
       return { ok: true };
     }
+
     const { rawToken, tokenHash } = this.emailService.createPasswordResetToken();
     await this.userModel.updateOne(
       { _id: user._id },
@@ -98,16 +109,25 @@ export class AuthService {
         },
       },
     );
+
+    const resetUrl = this.emailService.buildPasswordResetUrl(rawToken);
     const emailResult = await this.emailService.sendForgotPasswordEmail(
       user.email,
       user.displayName,
       rawToken,
     );
+
     if (!emailResult.ok) {
       this.logger.warn(
         `Password-reset email failed for ${user.email}: ${emailResult.reason ?? emailResult.status}`,
       );
+      if (this.configService.get<string>('NODE_ENV', 'development') !== 'production') {
+        this.logger.warn(`[dev] Password reset link for ${user.email}:\n${resetUrl}`);
+      }
+    } else {
+      this.logger.log(`Password reset email sent to ${user.email}`);
     }
+
     return { ok: true };
   }
 

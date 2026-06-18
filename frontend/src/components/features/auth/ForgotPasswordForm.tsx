@@ -12,25 +12,39 @@ export function ForgotPasswordForm() {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    forgot.mutate({ email: email.trim() });
+    const trimmed = email.trim();
+    if (!trimmed) return;
+    forgot.mutate({ email: trimmed });
   };
 
   if (forgot.isSuccess) {
     return (
-      <p className="text-sm text-muted-foreground">
-        If an account exists for <strong>{email}</strong>, we&apos;ve sent a
-        password reset link. Check your inbox.
-      </p>
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          If an account exists for <strong>{email}</strong>, we&apos;ve sent a
+          password reset link. Check your inbox and spam folder.
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={() => forgot.reset()}
+        >
+          Send again
+        </Button>
+      </div>
     );
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-4" noValidate={false}>
       <div className="space-y-1.5">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="forgot-email">Email</Label>
         <Input
-          id="email"
+          id="forgot-email"
+          name="email"
           type="email"
+          inputMode="email"
           autoComplete="email"
           required
           value={email}
@@ -40,12 +54,16 @@ export function ForgotPasswordForm() {
       </div>
 
       {forgot.isError ? (
-        <p className="text-sm text-destructive">
+        <p className="text-sm text-destructive" role="alert">
           {getErrorMessage(forgot.error)}
         </p>
       ) : null}
 
-      <Button type="submit" className="w-full" disabled={forgot.isPending}>
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={forgot.isPending || !email.trim()}
+      >
         {forgot.isPending ? "Sending…" : "Send reset link"}
       </Button>
     </form>

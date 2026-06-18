@@ -20,6 +20,10 @@ export class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
+  APP_URL?: string;
+
+  @IsOptional()
+  @IsString()
   JWT_SECRET?: string;
 
   @IsOptional()
@@ -33,6 +37,14 @@ export class EnvironmentVariables {
   @IsOptional()
   @IsString()
   JWT_REFRESH_TTL_SECONDS?: string;
+
+  @IsOptional()
+  @IsString()
+  BREVO_API_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  BREVO_API_URL?: string;
 
   @IsOptional()
   @IsString()
@@ -76,6 +88,9 @@ export function validateEnv(config: Record<string, unknown>) {
     }
     if (isPlaceholderSecret(validated.JWT_REFRESH_SECRET)) {
       throw new Error('JWT_REFRESH_SECRET must be set to a secure value in production');
+    }
+    if (!validated.CLIENT_ORIGIN?.trim()) {
+      throw new Error('CLIENT_ORIGIN must be set in production');
     }
   } else if (
     isPlaceholderSecret(validated.JWT_SECRET) ||

@@ -1,4 +1,6 @@
 /** Site-wide SEO and PWA metadata */
+import { DEFAULT_APP_ORIGIN } from "./defaults";
+
 export const site = {
   name: "DevTweetHub",
   shortName: "DevTweetHub",
@@ -21,8 +23,6 @@ export const site = {
   locale: "en_US",
   themeColor: "#0abab5",
   backgroundColor: "#ffffff",
-  /** Production canonical origin (override with NEXT_PUBLIC_APP_URL). */
-  productionUrl: "https://devtweethub.web.app",
   twitter: {
     card: "summary_large_image" as const,
   },
@@ -36,8 +36,14 @@ export function getSiteUrl(): string {
         ? process.env.VERCEL_URL
         : `https://${process.env.VERCEL_URL}`
       : process.env.NODE_ENV === "production"
-        ? site.productionUrl
-        : "http://localhost:3000");
+        ? undefined
+        : DEFAULT_APP_ORIGIN);
+
+  if (!url) {
+    throw new Error(
+      "NEXT_PUBLIC_APP_URL is required in production. Set it in your deployment environment.",
+    );
+  }
 
   return url.replace(/\/$/, "");
 }
