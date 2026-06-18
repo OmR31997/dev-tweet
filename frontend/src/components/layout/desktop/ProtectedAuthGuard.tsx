@@ -3,6 +3,7 @@
 import { refreshAccessToken } from "@/lib/api/client";
 import { isAccessTokenExpired } from "@/lib/api/auth-token";
 import { useAuthHasHydrated, useAccessToken } from "@/store";
+import { authActions } from "@/store/action";
 import { useAuthStore } from "@/store/slices/auth.slice";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
@@ -30,6 +31,7 @@ export function ProtectedAuthGuard({ children }: { children: ReactNode }) {
       }
 
       if (!refreshToken) {
+        authActions.clearSession();
         router.replace("/login");
         return;
       }

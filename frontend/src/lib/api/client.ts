@@ -53,6 +53,7 @@ export async function refreshAccessToken(): Promise<boolean> {
     authActions.setSession(normalizeAuthResponse(data));
     return true;
   } catch {
+    authActions.clearSession();
     return false;
   }
 }

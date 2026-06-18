@@ -3,10 +3,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { authActions, uiActions } from "@/store/action";
+import { hasRestorableSession } from "@/lib/api/auth-token";
 import {
   useAccessToken,
   useAuthHasHydrated,
   useAuthUser,
+  useRefreshToken,
 } from "@/store/selector";
 import { queryKeys } from "../query-keys";
 import { authService } from "../services/auth.service";
@@ -44,16 +46,19 @@ export function useCurrentUser() {
 export function useAuthSession() {
   const storeUser = useAuthUser();
   const accessToken = useAccessToken();
+  const refreshToken = useRefreshToken();
   const hasHydrated = useAuthHasHydrated();
   const query = useCurrentUser();
 
   const user = storeUser ?? query.data;
+  const isAuthenticated = hasRestorableSession(accessToken, refreshToken);
 
   return {
     user,
-    isAuthenticated: Boolean(accessToken),
+    isAuthenticated,
     isLoading:
-      !hasHydrated || (Boolean(accessToken) && query.isLoading && !storeUser),
+      !hasHydrated ||
+      (isAuthenticated && query.isLoading && !storeUser),
     isError: query.isError && !storeUser,
     error: query.error,
     refetch: query.refetch,

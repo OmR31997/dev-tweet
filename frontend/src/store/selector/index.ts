@@ -6,6 +6,7 @@ export {
   useAuthState,
   useAuthUser,
   useIsAuthenticated,
+  useRefreshToken,
 } from "./auth.selectors";
 export {
   uiSelectors,

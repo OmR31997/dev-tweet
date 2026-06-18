@@ -52,4 +52,15 @@ export function isAccessTokenExpired(
   return Date.now() >= exp * 1000 - skewSeconds * 1000;
 }
 
+/** True when the user can access protected routes (valid token or refresh available). */
+export function hasRestorableSession(
+  accessToken: string | null,
+  refreshToken: string | null,
+): boolean {
+  if (accessToken && !isAccessTokenExpired(accessToken)) {
+    return true;
+  }
+  return Boolean(refreshToken);
+}
+
 export { AUTH_TOKEN_KEY };

@@ -1,3 +1,4 @@
+import { hasRestorableSession } from "@/lib/api/auth-token";
 import type { AuthStore } from "@/store/types";
 import { useAuthStore } from "@/store/slices/auth.slice";
 import { useShallow } from "zustand/react/shallow";
@@ -7,7 +8,8 @@ export const authSelectors = {
   accessToken: (state: AuthStore) => state.accessToken,
   refreshToken: (state: AuthStore) => state.refreshToken,
   hasHydrated: (state: AuthStore) => state.hasHydrated,
-  isAuthenticated: (state: AuthStore) => Boolean(state.accessToken),
+  isAuthenticated: (state: AuthStore) =>
+    hasRestorableSession(state.accessToken, state.refreshToken),
   displayName: (state: AuthStore) =>
     state.user?.displayName ?? state.user?.email ?? null,
 };
@@ -43,7 +45,10 @@ export function useAuthState() {
       user: state.user,
       accessToken: state.accessToken,
       hasHydrated: state.hasHydrated,
-      isAuthenticated: Boolean(state.accessToken),
+      isAuthenticated: hasRestorableSession(
+        state.accessToken,
+        state.refreshToken,
+      ),
       displayName: state.user?.displayName ?? state.user?.email ?? null,
     }))
   );
