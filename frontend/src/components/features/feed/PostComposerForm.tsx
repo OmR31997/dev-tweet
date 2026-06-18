@@ -10,6 +10,7 @@ import {
   type PostAttachment,
 } from "@/lib/api";
 import { extractTags } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { useAuthUser } from "@/store";
 import {
   FileSpreadsheet,
@@ -33,10 +34,12 @@ export function PostComposerForm({
   onPosted,
   showAvatar = true,
   autoFocus,
+  stickyActions = false,
 }: {
   onPosted?: () => void;
   showAvatar?: boolean;
   autoFocus?: boolean;
+  stickyActions?: boolean;
 }) {
   const me = useAuthUser();
   const createPost = useCreatePost();
@@ -155,7 +158,13 @@ export function PostComposerForm({
             <p className="mt-2 text-sm text-destructive">{error}</p>
           ) : null}
 
-          <div className="mt-3 flex items-center justify-between gap-3">
+          <div
+            className={cn(
+              "mt-3 flex items-center justify-between gap-3",
+              stickyActions &&
+                "sticky bottom-0 z-10 -mx-1 border-t border-border bg-card px-1 py-3",
+            )}
+          >
             <div className="flex items-center gap-1">
               <button
                 type="button"

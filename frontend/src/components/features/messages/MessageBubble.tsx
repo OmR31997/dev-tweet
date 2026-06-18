@@ -4,6 +4,8 @@ import { UserAvatar } from "@/components/common/UserAvatar";
 import { useUser, type Message } from "@/lib/api";
 import { isOptimisticId } from "@/lib/api/optimistic";
 import { formatMessageTime } from "@/lib/format";
+import { useOverlayDismiss } from "@/lib/use-overlay-dismiss";
+import { usePointerTap } from "@/lib/use-pointer-tap";
 import { cn } from "@/lib/utils";
 import { useAuthUser } from "@/store";
 import { QuotedReply, quotedReplyLabel } from "./QuotedReply";
@@ -16,7 +18,7 @@ import {
   Smile,
   Trash2,
 } from "lucide-react";
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { createPortal } from "react-dom";
 import { EmojiReactionPanel } from "./EmojiReactionPanel";
@@ -36,7 +38,53 @@ const MENU_GAP = 8;
 const VIEWPORT_PAD = 8;
 
 const menuItemClass =
-  "flex w-full items-center gap-3 whitespace-nowrap px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent";
+  "flex w-full items-center gap-3 whitespace-nowrap px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent active:bg-accent touch-manipulation";
+
+function ReactionPill({
+  emoji,
+  count,
+  active,
+  onReact,
+}: {
+  emoji: string;
+  count: number;
+  active: boolean;
+  onReact: (emoji: string) => void;
+}) {
+  const tap = usePointerTap(() => onReact(emoji));
+
+  return (
+    <button
+      type="button"
+      {...tap}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs text-foreground touch-manipulation",
+        active ? "border-primary bg-primary/10" : "border-border bg-card",
+      )}
+    >
+      <span>{emoji}</span>
+      <span>{count}</span>
+    </button>
+  );
+}
+
+function MenuAction({
+  onAction,
+  className,
+  children,
+}: {
+  onAction: () => void;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const tap = usePointerTap(onAction);
+
+  return (
+    <button type="button" {...tap} className={className}>
+      {children}
+    </button>
+  );
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(value, max));
@@ -183,6 +231,7 @@ export function MessageBubble({
   const bubbleRef = useRef<HTMLDivElement>(null);
   const bubbleWrapRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const suppressClickRef = useRef(false);
 
   const reactionSummary = useMemo(() => {
     const map = new Map<string, number>();
@@ -236,10 +285,15 @@ export function MessageBubble({
     </>
   );
 
-  const closeMenus = () => {
+  const closeMenus = useCallback(() => {
     setMenuOpen(false);
     setEmojiOpen(false);
-  };
+  }, []);
+
+  const { onBackdropPointerDown: onMenuBackdropPointerDown } = useOverlayDismiss(
+    menuOpen,
+    closeMenus,
+  );
 
   const openMenuAtBubble = () => {
     const rect = bubbleRef.current?.getBoundingClientRect();
@@ -266,13 +320,22 @@ export function MessageBubble({
     openMenuAtBubble();
   };
 
+  const handleDoubleTap = () => {
+    if (selectionMode) return;
+    suppressClickRef.current = true;
+    bubbleWrapRef.current?.blur();
+    openMenuAtBubble();
+  };
+
   const openReactionPicker = () => {
     const rect = bubbleRef.current?.getBoundingClientRect();
     if (rect) {
       const panelWidth = 320;
       const quickHeight = 48;
       const fullHeight = 420;
-      const spaceBelow = window.innerHeight - rect.bottom;
+      const mobileComposerReserve = window.innerWidth < 768 ? 96 : 0;
+      const usableHeight = window.innerHeight - mobileComposerReserve;
+      const spaceBelow = usableHeight - rect.bottom;
       const left = mine
         ? Math.max(8, rect.right - panelWidth)
         : Math.min(rect.left, window.innerWidth - panelWidth - 8);
@@ -286,15 +349,19 @@ export function MessageBubble({
       } else {
         setEmojiPos({
           top: spaceBelow > quickHeight + 8 ? rect.bottom + MENU_GAP : 8,
-          left,
+          left: Math.max(8, Math.min(left, window.innerWidth - panelWidth - 8)),
         });
       }
     }
     setMenuOpen(false);
-    setEmojiOpen(true);
+    window.setTimeout(() => setEmojiOpen(true), 0);
   };
 
   const handleClick = () => {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
     if (selectionMode) {
       onToggleSelect();
       return;
@@ -359,6 +426,7 @@ export function MessageBubble({
           mine={mine}
           disabled={swipeDisabled}
           onReply={onReply}
+          onDoubleTap={handleDoubleTap}
           onDoubleClick={handleDoubleClick}
         >
           <div
@@ -483,23 +551,13 @@ export function MessageBubble({
               )}
             >
               {reactionSummary.map(([emoji, count]) => (
-                <button
+                <ReactionPill
                   key={emoji}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onReact(emoji);
-                  }}
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs text-foreground",
-                    myReaction === emoji
-                      ? "border-primary bg-primary/10"
-                      : "border-border bg-card",
-                  )}
-                >
-                  <span>{emoji}</span>
-                  <span>{count}</span>
-                </button>
+                  emoji={emoji}
+                  count={count}
+                  active={myReaction === emoji}
+                  onReact={onReact}
+                />
               ))}
             </div>
           ) : null}
@@ -510,16 +568,19 @@ export function MessageBubble({
       {menuOpen && typeof document !== "undefined"
         ? createPortal(
             <>
-              <div className="fixed inset-0 z-40" onClick={closeMenus} />
+              <div
+                className="fixed inset-0 z-[80] touch-none bg-transparent"
+                onPointerDown={onMenuBackdropPointerDown}
+                aria-hidden
+              />
               <div
                 ref={menuRef}
-                className="fixed z-50 w-52 overflow-hidden rounded-xl border border-border bg-card text-foreground shadow-xl"
+                className="fixed z-[81] w-52 overflow-hidden rounded-xl border border-border bg-card text-foreground shadow-xl touch-manipulation"
                 style={{ top: menuPos.top, left: menuPos.left }}
-                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
               >
-            <button
-              type="button"
-              onClick={() => {
+            <MenuAction
+              onAction={() => {
                 closeMenus();
                 onReact("❤️");
               }}
@@ -527,18 +588,16 @@ export function MessageBubble({
             >
               <Heart className="size-4" />
               {t("like")}
-            </button>
-            <button
-              type="button"
-              onClick={openReactionPicker}
+            </MenuAction>
+            <MenuAction
+              onAction={openReactionPicker}
               className={cn(menuItemClass, "border-t border-border")}
             >
               <Smile className="size-4" />
               {t("react")}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
+            </MenuAction>
+            <MenuAction
+              onAction={() => {
                 closeMenus();
                 onReply();
               }}
@@ -547,10 +606,9 @@ export function MessageBubble({
               <Reply className="size-4" />
               {t("reply")}
               <span className="ml-auto text-xs text-muted-foreground">R</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
+            </MenuAction>
+            <MenuAction
+              onAction={() => {
                 closeMenus();
                 onForward();
               }}
@@ -558,10 +616,9 @@ export function MessageBubble({
             >
               <Forward className="size-4" />
               {t("forward")}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
+            </MenuAction>
+            <MenuAction
+              onAction={() => {
                 closeMenus();
                 onEnterSelection();
               }}
@@ -569,20 +626,18 @@ export function MessageBubble({
             >
               <Check className="size-4 shrink-0" />
               {t("select")}
-            </button>
+            </MenuAction>
             {message.content?.trim() ? (
-              <button
-                type="button"
-                onClick={() => void copyMessage()}
+              <MenuAction
+                onAction={() => void copyMessage()}
                 className={cn(menuItemClass, "border-t border-border")}
               >
                 <Copy className="size-4 shrink-0" />
                 {t("copy")}
-              </button>
+              </MenuAction>
             ) : null}
-            <button
-              type="button"
-              onClick={() => {
+            <MenuAction
+              onAction={() => {
                 closeMenus();
                 onDeleteForMe();
               }}
@@ -590,11 +645,10 @@ export function MessageBubble({
             >
               <Trash2 className="size-4 shrink-0" />
               {t("deleteForMe")}
-            </button>
+            </MenuAction>
             {mine ? (
-              <button
-                type="button"
-                onClick={() => {
+              <MenuAction
+                onAction={() => {
                   closeMenus();
                   onDeleteForEveryone();
                 }}
@@ -605,7 +659,7 @@ export function MessageBubble({
               >
                 <Trash2 className="size-4 shrink-0" />
                 {t("deleteForEveryone")}
-              </button>
+              </MenuAction>
             ) : null}
               </div>
             </>,

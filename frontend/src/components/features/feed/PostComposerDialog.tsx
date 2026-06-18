@@ -1,7 +1,7 @@
 "use client";
 
+import { MobileSheet } from "@/components/common/MobileSheet";
 import { PostComposerForm } from "./PostComposerForm";
-import { useEffect } from "react";
 
 export function PostComposerDialog({
   open,
@@ -10,28 +10,16 @@ export function PostComposerDialog({
   open: boolean;
   onClose: () => void;
 }) {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
-      role="presentation"
-      onClick={onClose}
+    <MobileSheet
+      open={open}
+      onClose={onClose}
+      title="Create post"
+      titleId="create-post-title"
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-xl"
-      >
-        <h2 className="mb-4 text-lg font-semibold">Create post</h2>
-        <PostComposerForm autoFocus onPosted={onClose} />
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 sm:px-5 sm:pb-5">
+        <PostComposerForm autoFocus stickyActions onPosted={onClose} />
       </div>
-    </div>
+    </MobileSheet>
   );
 }

@@ -4,28 +4,53 @@ import { cn } from "@/lib/utils";
 import { Reply } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect } from "react";
+import { useDoubleTap } from "./use-double-tap";
 import { useSwipeToReply } from "./use-swipe-to-reply";
 
 export function MessageSwipeToReply({
   mine,
   disabled,
   onReply,
+  onDoubleTap,
   onDoubleClick,
   children,
 }: {
   mine: boolean;
   disabled?: boolean;
   onReply: () => void;
+  onDoubleTap?: () => void;
   onDoubleClick?: (e: React.MouseEvent) => void;
   children: ReactNode;
 }) {
   const swipe = useSwipeToReply({ mine, disabled, onReply });
-  const { reset, offset, dragging, hintVisible, onPointerDown, onPointerMove, onPointerUp, onPointerCancel } =
-    swipe;
+  const { registerPointerUp, reset: resetDoubleTap } = useDoubleTap(() => {
+    onDoubleTap?.();
+  });
+  const {
+    reset,
+    offset,
+    dragging,
+    hintVisible,
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+    didMove,
+  } = swipe;
 
   useEffect(() => {
-    if (disabled) reset();
-  }, [disabled, reset]);
+    if (disabled) {
+      reset();
+      resetDoubleTap();
+    }
+  }, [disabled, reset, resetDoubleTap]);
+
+  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    const moved = didMove();
+    onPointerUp(event);
+    if (!disabled && onDoubleTap) {
+      registerPointerUp(event, moved);
+    }
+  };
 
   return (
     <div
@@ -53,8 +78,8 @@ export function MessageSwipeToReply({
         }
         onPointerDown={disabled ? undefined : onPointerDown}
         onPointerMove={disabled ? undefined : onPointerMove}
-        onPointerUp={disabled ? undefined : onPointerUp}
-        onPointerCancel={disabled ? undefined : onPointerCancel}
+        onPointerUp={disabled ? undefined : handlePointerUp}
+        onPointerCancel={disabled ? undefined : handlePointerUp}
         onDoubleClick={onDoubleClick}
       >
         {children}

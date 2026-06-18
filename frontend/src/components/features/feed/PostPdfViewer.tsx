@@ -166,7 +166,7 @@ export function PostPdfViewer({
       icon={<FileText className="size-5" />}
       compact={compact}
     >
-      <div className="bg-muted/30 max-md:touch-pan-y">
+      <div className="bg-muted/30">
         {loading ? (
           <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
@@ -178,7 +178,7 @@ export function PostPdfViewer({
           </p>
         ) : (
           <>
-            <PdfPageCarousel data={pdfData} compact={compact} />
+            <PdfPageCarousel data={pdfData} compact={compact} embedInFeed />
             <div className="border-t border-border px-4 py-3 md:hidden">
               <button
                 type="button"

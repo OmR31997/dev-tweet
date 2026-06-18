@@ -75,6 +75,10 @@
     touch-action: pan-y;
   }
 
+  .feed-pdf-embed {
+    touch-action: pan-y;
+  }
+
   .feed-pdf-desktop-scroll {
     overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;

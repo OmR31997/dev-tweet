@@ -50,6 +50,18 @@ export function ContactInfoPanel({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  useEffect(() => {
+    if (!open || typeof window === "undefined") return;
+    if (!window.matchMedia("(max-width: 767px)").matches) return;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open]);
+
   if (!open) return null;
 
   const displayName = user.data?.displayName ?? "…";
@@ -73,16 +85,11 @@ export function ContactInfoPanel({
 
   return (
     <>
-      <div
-        className="fixed inset-0 z-40 bg-black/35 md:hidden"
-        onClick={onClose}
-        aria-hidden
-      />
       <aside
         className={cn(
           "chat-contact-panel",
-          "fixed inset-y-0 right-0 z-50 h-full shadow-2xl",
-          "md:static md:z-auto md:shadow-none",
+          "fixed inset-0 z-50 h-full w-full max-w-full shadow-2xl",
+          "md:static md:inset-auto md:z-auto md:h-full md:w-auto md:max-w-[42vw] md:shadow-none",
         )}
       >
         <header className="chat-contact-header">

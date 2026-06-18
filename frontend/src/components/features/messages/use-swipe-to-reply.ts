@@ -26,12 +26,14 @@ export function useSwipeToReply({
   const startOffset = useRef(0);
   const activePointer = useRef<number | null>(null);
   const isDragging = useRef(false);
+  const movedRef = useRef(false);
 
   const reset = useCallback(() => {
     setDragging(false);
     setOffset(0);
     activePointer.current = null;
     isDragging.current = false;
+    movedRef.current = false;
   }, []);
 
   const onPointerDown = useCallback(
@@ -42,6 +44,7 @@ export function useSwipeToReply({
       startY.current = event.clientY;
       startOffset.current = offset;
       isDragging.current = false;
+      movedRef.current = false;
     },
     [disabled, offset],
   );
@@ -60,11 +63,13 @@ export function useSwipeToReply({
         ) {
           return;
         }
+        movedRef.current = true;
         if (Math.abs(deltaY) > Math.abs(deltaX)) {
           activePointer.current = null;
           return;
         }
         isDragging.current = true;
+        movedRef.current = true;
         setDragging(true);
         event.currentTarget.setPointerCapture(event.pointerId);
       }
@@ -96,11 +101,14 @@ export function useSwipeToReply({
 
   const hintVisible = Math.abs(offset) >= 24;
 
+  const didMove = useCallback(() => movedRef.current, []);
+
   return {
     offset,
     dragging,
     hintVisible,
     reset,
+    didMove,
     onPointerDown,
     onPointerMove,
     onPointerUp,

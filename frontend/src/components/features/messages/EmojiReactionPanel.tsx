@@ -1,15 +1,39 @@
 "use client";
 
+import { useOverlayDismiss } from "@/lib/use-overlay-dismiss";
+import { usePointerTap } from "@/lib/use-pointer-tap";
+import { cn } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { EmojiClickData } from "emoji-picker-react";
 import { Theme } from "emoji-picker-react";
-import { cn } from "@/lib/utils";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
 const QUICK_REACTIONS = ["❤️", "👍", "😂", "😮", "😢", "🙏"];
+
+function QuickReactionButton({
+  emoji,
+  onPick,
+}: {
+  emoji: string;
+  onPick: (emoji: string) => void;
+}) {
+  const tap = usePointerTap(() => onPick(emoji));
+
+  return (
+    <button
+      type="button"
+      {...tap}
+      className="rounded-md px-2 py-1.5 text-xl transition-colors hover:bg-accent active:bg-accent touch-manipulation"
+      aria-label={`React with ${emoji}`}
+    >
+      {emoji}
+    </button>
+  );
+}
 
 export function EmojiReactionPanel({
   open,
@@ -27,8 +51,25 @@ export function EmojiReactionPanel({
   growUpward?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const { onBackdropPointerDown } = useOverlayDismiss(open, onClose);
+  const expandTap = usePointerTap(() => setExpanded((value) => !value));
 
-  if (!open) return null;
+  useEffect(() => {
+    if (!open) setExpanded(false);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open]);
+
+  if (!open || typeof document === "undefined") return null;
 
   const handlePick = (emoji: string) => {
     onPick(emoji);
@@ -36,40 +77,35 @@ export function EmojiReactionPanel({
     onClose();
   };
 
-  const handleClose = () => {
-    setExpanded(false);
-    onClose();
-  };
-
-  return (
+  return createPortal(
     <>
-      <div className="fixed inset-0 z-40" onClick={handleClose} />
+      <div
+        className="fixed inset-0 z-[80] touch-none bg-transparent"
+        onPointerDown={onBackdropPointerDown}
+        aria-hidden
+      />
       <div
         className={cn(
-          "fixed z-50 overflow-hidden rounded-xl border border-border bg-card shadow-2xl",
-          expanded ? "w-[min(320px,calc(100vw-1rem))]" : "w-fit",
+          "fixed z-[81] overflow-hidden rounded-xl border border-border bg-card shadow-2xl touch-manipulation",
+          expanded ? "w-[min(320px,calc(100vw-1rem))]" : "w-fit max-w-[calc(100vw-1rem)]",
           growUpward && "flex flex-col-reverse",
           className,
         )}
         style={style}
-        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-0.5 bg-card py-1.5 pl-1.5 pr-1">
           {QUICK_REACTIONS.map((emoji) => (
-            <button
+            <QuickReactionButton
               key={emoji}
-              type="button"
-              onClick={() => handlePick(emoji)}
-              className="rounded-md px-1.5 py-1 text-xl transition-colors hover:bg-accent"
-              aria-label={`React with ${emoji}`}
-            >
-              {emoji}
-            </button>
+              emoji={emoji}
+              onPick={handlePick}
+            />
           ))}
           <button
             type="button"
-            onClick={() => setExpanded((e) => !e)}
-            className="grid size-8 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            {...expandTap}
+            className="grid size-9 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground active:bg-accent touch-manipulation"
             aria-label={expanded ? "Hide emoji list" : "Show all emojis"}
           >
             <Plus
@@ -86,9 +122,11 @@ export function EmojiReactionPanel({
             height={360}
             searchPlaceHolder="Search emoji"
             previewConfig={{ showPreview: false }}
+            lazyLoadEmojis
           />
         ) : null}
       </div>
-    </>
+    </>,
+    document.body,
   );
 }

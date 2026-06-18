@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import type { MessageAttachmentPayload, ReplyTarget } from "@/lib/api";
 import { useUploadChatFile } from "@/lib/api";
 import { formatFileSize } from "@/lib/api/normalizers";
+import { usePointerTap } from "@/lib/use-pointer-tap";
 import { cn } from "@/lib/utils";
 import { FileText, Paperclip, Send, Smile, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -76,16 +77,29 @@ export function MessageComposer({
     const rect = smileRef.current?.getBoundingClientRect();
     if (rect) {
       const panelWidth = 320;
-      setEmojiPos({
-        bottom: window.innerHeight - rect.top + 8,
-        left: Math.max(
-          8,
-          Math.min(rect.left, window.innerWidth - panelWidth - 8),
-        ),
-      });
+      const quickHeight = 56;
+      const spaceAbove = rect.top;
+      const left = Math.max(
+        8,
+        Math.min(rect.left, window.innerWidth - panelWidth - 8),
+      );
+
+      if (spaceAbove > quickHeight + 16) {
+        setEmojiPos({
+          bottom: window.innerHeight - rect.top + 8,
+          left,
+        });
+      } else {
+        setEmojiPos({
+          top: rect.bottom + 8,
+          left,
+        });
+      }
     }
     setEmojiOpen(true);
   };
+
+  const emojiButtonTap = usePointerTap(openEmojiPicker);
 
   const revokePreview = (item: PendingAttachment) => {
     if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
@@ -333,8 +347,8 @@ export function MessageComposer({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-10 shrink-0"
-            onClick={openEmojiPicker}
+            className="size-10 shrink-0 touch-manipulation"
+            {...emojiButtonTap}
             aria-label="Open emoji picker"
           >
             <Smile className="size-5" />

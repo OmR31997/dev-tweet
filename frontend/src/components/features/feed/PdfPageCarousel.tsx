@@ -1,6 +1,6 @@
 "use client";
 
-import { useCoarsePointer } from "@/lib/use-coarse-pointer";
+import { useTouchPrimaryDevice } from "@/lib/use-touch-primary-device";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import * as pdfjs from "pdfjs-dist";
@@ -18,7 +18,9 @@ type PdfPageCarouselProps = {
   compact?: boolean;
   className?: string;
   showNav?: boolean;
-  /** Fullscreen: touch swipe + horizontal scroll. Feed uses desktop scroll only. */
+  /** In-feed preview: vertical scroll friendly on touch devices. */
+  embedInFeed?: boolean;
+  /** Fullscreen: horizontal swipe between pages. */
   swipePages?: boolean;
 };
 
@@ -97,7 +99,7 @@ function PageDots({
   onSelect: (index: number) => void;
 }) {
   return (
-    <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-background/85 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm">
+    <div className="pointer-events-auto absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-background/85 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm">
       {Array.from({ length: count }, (_, index) => (
         <button
           key={index}
@@ -117,15 +119,54 @@ function PageDots({
   );
 }
 
+function EmbedPdfPageNav({
+  count,
+  currentPage,
+  onPrev,
+  onNext,
+}: {
+  count: number;
+  currentPage: number;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 border-t border-border/70 bg-muted/25 px-3 py-2">
+      <button
+        type="button"
+        aria-label="Previous page"
+        disabled={currentPage <= 0}
+        onClick={onPrev}
+        className="feed-action-btn flex min-h-10 min-w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
+      >
+        <ChevronLeft className="size-5" />
+      </button>
+      <span className="text-xs font-medium tabular-nums text-muted-foreground">
+        Page {currentPage + 1} of {count}
+      </span>
+      <button
+        type="button"
+        aria-label="Next page"
+        disabled={currentPage >= count - 1}
+        onClick={onNext}
+        className="feed-action-btn flex min-h-10 min-w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
+      >
+        <ChevronRight className="size-5" />
+      </button>
+    </div>
+  );
+}
+
 export function PdfPageCarousel({
   data,
   compact,
   className,
   showNav = true,
+  embedInFeed = false,
   swipePages = false,
 }: PdfPageCarouselProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const coarsePointer = useCoarsePointer();
+  const touchPrimary = useTouchPrimaryDevice();
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageUrls, setPageUrls] = useState<string[]>([]);
@@ -186,10 +227,11 @@ export function PdfPageCarousel({
   }, [data, compact]);
 
   const multiPage = numPages > 1;
+  const useStaticEmbed = embedInFeed && touchPrimary;
   const horizontalScroll =
-    multiPage && (swipePages || !coarsePointer);
+    multiPage && !useStaticEmbed && (swipePages || embedInFeed);
 
-  useDesktopCarouselInput(containerRef, horizontalScroll && !coarsePointer);
+  useDesktopCarouselInput(containerRef, horizontalScroll && !touchPrimary);
 
   const scrollToPage = useCallback(
     (index: number) => {
@@ -254,10 +296,10 @@ export function PdfPageCarousel({
 
   if (!horizontalScroll) {
     return (
-      <div className={cn("relative bg-muted/20", className)}>
+      <div className={cn("feed-pdf-embed bg-muted/20", className)}>
         <div
           className={cn(
-            "feed-pdf-preview flex items-center justify-center bg-muted/30",
+            "feed-pdf-preview relative flex items-center justify-center bg-muted/30",
             heightClass,
           )}
         >
@@ -272,11 +314,12 @@ export function PdfPageCarousel({
           ) : null}
         </div>
 
-        {multiPage && showNav ? (
-          <PageDots
+        {multiPage && showNav && useStaticEmbed ? (
+          <EmbedPdfPageNav
             count={numPages}
             currentPage={currentPage}
-            onSelect={scrollToPage}
+            onPrev={() => scrollToPage(currentPage - 1)}
+            onNext={() => scrollToPage(currentPage + 1)}
           />
         ) : null}
       </div>
@@ -292,7 +335,7 @@ export function PdfPageCarousel({
           "flex overflow-x-auto overflow-y-hidden overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
           swipePages ? "feed-horizontal-scroll" : "feed-pdf-desktop-scroll",
           multiPage && "snap-x snap-mandatory",
-          horizontalScroll && !coarsePointer && "cursor-grab select-none [&.is-dragging]:cursor-grabbing",
+          !touchPrimary && "cursor-grab select-none [&.is-dragging]:cursor-grabbing",
           heightClass,
         )}
       >
