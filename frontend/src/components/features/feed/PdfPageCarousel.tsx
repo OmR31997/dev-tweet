@@ -1,5 +1,6 @@
 "use client";
 
+import { useCoarsePointer } from "@/lib/use-coarse-pointer";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import * as pdfjs from "pdfjs-dist";
@@ -17,15 +18,114 @@ type PdfPageCarouselProps = {
   compact?: boolean;
   className?: string;
   showNav?: boolean;
+  /** Fullscreen: touch swipe + horizontal scroll. Feed uses desktop scroll only. */
+  swipePages?: boolean;
 };
+
+function useDesktopCarouselInput(
+  containerRef: React.RefObject<HTMLDivElement | null>,
+  enabled: boolean,
+) {
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || !enabled) return;
+
+    const onWheel = (e: WheelEvent) => {
+      const absX = Math.abs(e.deltaX);
+      const absY = Math.abs(e.deltaY);
+      if (absX <= absY && absX < 2) return;
+
+      const maxLeft = el.scrollWidth - el.clientWidth;
+      if (maxLeft <= 0) return;
+
+      const goingLeft = e.deltaX < 0;
+      const goingRight = e.deltaX > 0;
+      const atStart = el.scrollLeft <= 0;
+      const atEnd = el.scrollLeft >= maxLeft - 1;
+
+      if ((goingLeft && atStart) || (goingRight && atEnd)) return;
+
+      e.preventDefault();
+      el.scrollLeft += e.deltaX;
+    };
+
+    let dragging = false;
+    let startX = 0;
+    let startScroll = 0;
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      dragging = true;
+      startX = e.pageX;
+      startScroll = el.scrollLeft;
+      el.classList.add("is-dragging");
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!dragging) return;
+      e.preventDefault();
+      el.scrollLeft = startScroll - (e.pageX - startX);
+    };
+
+    const endDrag = () => {
+      dragging = false;
+      el.classList.remove("is-dragging");
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", endDrag);
+
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", endDrag);
+      el.classList.remove("is-dragging");
+    };
+  }, [containerRef, enabled]);
+}
+
+function PageDots({
+  count,
+  currentPage,
+  onSelect,
+}: {
+  count: number;
+  currentPage: number;
+  onSelect: (index: number) => void;
+}) {
+  return (
+    <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-background/85 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm">
+      {Array.from({ length: count }, (_, index) => (
+        <button
+          key={index}
+          type="button"
+          aria-label={`Go to page ${index + 1}`}
+          onClick={() => onSelect(index)}
+          className={cn(
+            "size-1.5 rounded-full transition-colors",
+            index === currentPage ? "bg-primary" : "bg-muted-foreground/40",
+          )}
+        />
+      ))}
+      <span className="ml-1 tabular-nums text-muted-foreground">
+        {currentPage + 1}/{count}
+      </span>
+    </div>
+  );
+}
 
 export function PdfPageCarousel({
   data,
   compact,
   className,
   showNav = true,
+  swipePages = false,
 }: PdfPageCarouselProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const coarsePointer = useCoarsePointer();
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageUrls, setPageUrls] = useState<string[]>([]);
@@ -85,13 +185,27 @@ export function PdfPageCarousel({
     };
   }, [data, compact]);
 
-  const scrollToPage = useCallback((index: number) => {
-    const container = containerRef.current;
-    if (!container) return;
-    const width = container.clientWidth;
-    container.scrollTo({ left: width * index, behavior: "smooth" });
-    setCurrentPage(index);
-  }, []);
+  const multiPage = numPages > 1;
+  const horizontalScroll =
+    multiPage && (swipePages || !coarsePointer);
+
+  useDesktopCarouselInput(containerRef, horizontalScroll && !coarsePointer);
+
+  const scrollToPage = useCallback(
+    (index: number) => {
+      const next = Math.max(0, Math.min(index, pageUrls.length - 1));
+      if (!horizontalScroll) {
+        setCurrentPage(next);
+        return;
+      }
+      const container = containerRef.current;
+      if (!container) return;
+      const width = container.clientWidth;
+      container.scrollTo({ left: width * next, behavior: "smooth" });
+      setCurrentPage(next);
+    },
+    [horizontalScroll, pageUrls.length],
+  );
 
   const handleScroll = useCallback(() => {
     const container = containerRef.current;
@@ -102,12 +216,14 @@ export function PdfPageCarousel({
     setCurrentPage(Math.max(0, Math.min(index, pageUrls.length - 1)));
   }, [pageUrls.length]);
 
+  const heightClass = compact ? "h-56" : "h-[min(70vh,520px)]";
+
   if (rendering) {
     return (
       <div
         className={cn(
           "flex items-center justify-center bg-muted/40 text-sm text-muted-foreground",
-          compact ? "h-56" : "h-[min(70vh,520px)]",
+          heightClass,
           className,
         )}
       >
@@ -121,7 +237,7 @@ export function PdfPageCarousel({
       <div
         className={cn(
           "flex items-center justify-center bg-muted/40 px-4 text-center text-sm text-muted-foreground",
-          compact ? "h-56" : "h-[min(70vh,520px)]",
+          heightClass,
           className,
         )}
       >
@@ -130,7 +246,42 @@ export function PdfPageCarousel({
     );
   }
 
-  const multiPage = numPages > 1;
+  const activeUrl = pageUrls[currentPage] ?? pageUrls[0];
+  const chevronClass = cn(
+    "absolute top-1/2 z-10 size-8 -translate-y-1/2 place-items-center rounded-full bg-background/90 text-foreground shadow-md transition-colors hover:bg-background",
+    swipePages ? "hidden md:grid" : "grid",
+  );
+
+  if (!horizontalScroll) {
+    return (
+      <div className={cn("relative bg-muted/20", className)}>
+        <div
+          className={cn(
+            "feed-pdf-preview flex items-center justify-center bg-muted/30",
+            heightClass,
+          )}
+        >
+          {activeUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={activeUrl}
+              alt={`Page ${currentPage + 1} of ${numPages}`}
+              className="pointer-events-none max-h-full max-w-full select-none object-contain"
+              draggable={false}
+            />
+          ) : null}
+        </div>
+
+        {multiPage && showNav ? (
+          <PageDots
+            count={numPages}
+            currentPage={currentPage}
+            onSelect={scrollToPage}
+          />
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className={cn("relative bg-muted/20", className)}>
@@ -138,9 +289,11 @@ export function PdfPageCarousel({
         ref={containerRef}
         onScroll={handleScroll}
         className={cn(
-          "feed-horizontal-scroll flex overflow-x-auto overflow-y-hidden overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+          "flex overflow-x-auto overflow-y-hidden overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+          swipePages ? "feed-horizontal-scroll" : "feed-pdf-desktop-scroll",
           multiPage && "snap-x snap-mandatory",
-          compact ? "h-56" : "h-[min(70vh,520px)]",
+          horizontalScroll && !coarsePointer && "cursor-grab select-none [&.is-dragging]:cursor-grabbing",
+          heightClass,
         )}
       >
         {pageUrls.map((url, index) => (
@@ -155,7 +308,7 @@ export function PdfPageCarousel({
             <img
               src={url}
               alt={`Page ${index + 1} of ${numPages}`}
-              className="max-h-full max-w-full object-contain"
+              className="pointer-events-none max-h-full max-w-full select-none object-contain"
               draggable={false}
             />
           </div>
@@ -169,7 +322,7 @@ export function PdfPageCarousel({
               type="button"
               aria-label="Previous page"
               onClick={() => scrollToPage(currentPage - 1)}
-              className="absolute left-2 top-1/2 hidden size-8 -translate-y-1/2 place-items-center rounded-full bg-background/90 text-foreground shadow-md transition-colors hover:bg-background md:grid"
+              className={cn(chevronClass, "left-2")}
             >
               <ChevronLeft className="size-5" />
             </button>
@@ -179,28 +332,16 @@ export function PdfPageCarousel({
               type="button"
               aria-label="Next page"
               onClick={() => scrollToPage(currentPage + 1)}
-              className="absolute right-2 top-1/2 hidden size-8 -translate-y-1/2 place-items-center rounded-full bg-background/90 text-foreground shadow-md transition-colors hover:bg-background md:grid"
+              className={cn(chevronClass, "right-2")}
             >
               <ChevronRight className="size-5" />
             </button>
           ) : null}
-          <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-background/85 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm">
-            {pageUrls.map((_, index) => (
-              <button
-                key={index}
-                type="button"
-                aria-label={`Go to page ${index + 1}`}
-                onClick={() => scrollToPage(index)}
-                className={cn(
-                  "size-1.5 rounded-full transition-colors",
-                  index === currentPage ? "bg-primary" : "bg-muted-foreground/40",
-                )}
-              />
-            ))}
-            <span className="ml-1 tabular-nums text-muted-foreground">
-              {currentPage + 1}/{numPages}
-            </span>
-          </div>
+          <PageDots
+            count={numPages}
+            currentPage={currentPage}
+            onSelect={scrollToPage}
+          />
         </>
       ) : null}
     </div>

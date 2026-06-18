@@ -114,7 +114,7 @@ function PdfFullscreenViewer({
         </a>
       </div>
       <div className="min-h-0 flex-1">
-        <PdfPageCarousel data={data} className="h-full" showNav />
+        <PdfPageCarousel data={data} className="h-full" showNav swipePages />
       </div>
     </div>,
     document.body,
@@ -166,7 +166,7 @@ export function PostPdfViewer({
       icon={<FileText className="size-5" />}
       compact={compact}
     >
-      <div className="bg-muted/30">
+      <div className="bg-muted/30 max-md:touch-pan-y">
         {loading ? (
           <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />

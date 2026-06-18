@@ -5,6 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { getErrorMessage, useRegister } from "@/lib/api";
+import {
+  isAllowedSignupEmail,
+  SIGNUP_EMAIL_REJECTED_MESSAGE,
+} from "@/lib/email-policy";
 import { useState } from "react";
 
 export function RegisterForm() {
@@ -12,12 +16,23 @@ export function RegisterForm() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
+
+  const emailInvalid =
+    emailTouched && email.trim().length > 0 && !isAllowedSignupEmail(email);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setEmailTouched(true);
+
+    const trimmedEmail = email.trim();
+    if (!isAllowedSignupEmail(trimmedEmail)) {
+      return;
+    }
+
     register.mutate({
       displayName: displayName.trim(),
-      email: email.trim(),
+      email: trimmedEmail,
       password,
     });
   };
@@ -46,8 +61,17 @@ export function RegisterForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
+          onBlur={() => setEmailTouched(true)}
+          placeholder="you@gmail.com"
+          aria-invalid={emailInvalid}
         />
+        {emailInvalid ? (
+          <p className="text-sm text-destructive">{SIGNUP_EMAIL_REJECTED_MESSAGE}</p>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Use your real email. Temporary or disposable addresses are not allowed.
+          </p>
+        )}
       </div>
 
       <div className="space-y-1.5">
@@ -69,7 +93,11 @@ export function RegisterForm() {
         </p>
       ) : null}
 
-      <Button type="submit" className="w-full" disabled={register.isPending}>
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={register.isPending || emailInvalid}
+      >
         {register.isPending ? "Creating account…" : "Create account"}
       </Button>
     </form>

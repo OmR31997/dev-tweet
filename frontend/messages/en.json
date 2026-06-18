@@ -107,6 +107,8 @@
     "resetPassword": "Reset password",
     "name": "Name",
     "namePlaceholder": "Your name",
+    "disposableEmailNotAllowed": "Please use a real, permanent email address. Temporary or disposable emails are not allowed.",
+    "signupEmailHint": "Use your real email. Temporary or disposable addresses are not allowed.",
     "loginSubmit": "Sign in",
     "signupSubmit": "Create account",
     "submitting": "Please wait…",
