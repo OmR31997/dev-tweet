@@ -89,7 +89,7 @@ export function ContactInfoPanel({
         className={cn(
           "chat-contact-panel",
           "fixed inset-0 z-50 h-full w-full max-w-full shadow-2xl",
-          "md:static md:inset-auto md:z-auto md:h-full md:w-auto md:max-w-[42vw] md:shadow-none",
+          "md:static md:inset-auto md:z-auto md:h-full md:w-full md:max-w-[400px] md:shadow-none",
         )}
       >
         <header className="chat-contact-header">
