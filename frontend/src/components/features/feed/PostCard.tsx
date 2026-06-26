@@ -1,5 +1,6 @@
 "use client";
 
+import { PAGE_GUTTER } from "@/components/common/PageLayout";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { OptionsMenu } from "@/components/common/OptionsMenu";
 import { PostAuthorFollowButton } from "@/components/common/PostAuthorFollowButton";
@@ -28,6 +29,7 @@ import { EditPostDialog } from "./EditPostDialog";
 import { PostContent } from "./PostContent";
 import { PostMedia } from "./PostMedia";
 import { RepostDialog } from "./RepostDialog";
+import { RepostEmbed } from "./RepostEmbed";
 
 function PostActionButton({
   label,
@@ -175,7 +177,7 @@ export function PostCard({
         className="feed-post border-b border-border bg-card"
         data-post-comments={post.id}
       >
-        <div className="flex gap-3 px-5 py-4">
+        <div className={cn("flex gap-3 py-4", PAGE_GUTTER)}>
           {reposterId ? (
             <Link href={`/profile/${reposterId}`} className="shrink-0">
               <UserAvatar
@@ -191,6 +193,11 @@ export function PostCard({
           )}
 
           <div className="min-w-0 flex-1">
+            <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <Repeat2 className="size-3.5" />
+              <span>Reposted</span>
+            </div>
+
             <div className="flex items-center gap-2">
               {reposterId ? (
                 <Link
@@ -231,37 +238,12 @@ export function PostCard({
             </div>
 
             {post.repostCaption ? (
-              <div className="mt-1">
+              <div className="mt-2">
                 <PostContent content={post.repostCaption} />
               </div>
             ) : null}
 
-            <div className="mt-3 overflow-hidden rounded-xl border border-border bg-muted/30">
-              <div className="flex gap-2.5 p-3">
-                <Link href={`/profile/${post.authorId}`} className="shrink-0">
-                  <UserAvatar
-                    name={post.authorName}
-                    photoURL={post.authorPhoto}
-                    className="size-9"
-                  />
-                </Link>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <Link
-                      href={`/profile/${post.authorId}`}
-                      className="truncate text-sm font-semibold hover:underline"
-                    >
-                      {post.authorName}
-                    </Link>
-                    <span className="ml-auto shrink-0">
-                      <PostAuthorFollowButton authorId={post.authorId} />
-                    </span>
-                  </div>
-                  <PostContent content={post.content} />
-                  <PostMedia post={post} compact />
-                </div>
-              </div>
-            </div>
+            <RepostEmbed post={post} />
 
             <PostActions
               post={post}
@@ -293,7 +275,7 @@ export function PostCard({
       className="feed-post border-b border-border bg-card"
       data-post-comments={post.id}
     >
-      <div className="flex gap-3 px-5 py-4">
+      <div className={cn("flex gap-3 py-4", PAGE_GUTTER)}>
         <Link href={`/profile/${post.authorId}`} className="shrink-0">
           <UserAvatar name={post.authorName} photoURL={post.authorPhoto} />
         </Link>

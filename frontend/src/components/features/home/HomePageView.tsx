@@ -35,7 +35,7 @@ export function HomePageView() {
 
   return (
     <div className="min-h-dvh bg-background">
-      <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
+      <header className="sticky top-0 z-30 mx-auto flex max-w-5xl items-center justify-between border-b border-border bg-background/95 px-6 py-5 backdrop-blur-sm supports-[backdrop-filter]:bg-background/95">
         <span className="flex items-center gap-2 text-lg font-bold tracking-tight">
           <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
             D

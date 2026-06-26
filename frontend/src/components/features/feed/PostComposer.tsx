@@ -1,5 +1,7 @@
 "use client";
 
+import { PAGE_GUTTER } from "@/components/common/PageLayout";
+import { cn } from "@/lib/utils";
 import { PostComposerForm } from "./PostComposerForm";
 
 export function PostComposer({
@@ -10,7 +12,7 @@ export function PostComposer({
   return (
     <div
       ref={composerRef}
-      className="border-b border-border bg-card px-5 py-4"
+      className={cn("border-b border-border bg-card py-4", PAGE_GUTTER)}
     >
       <PostComposerForm />
     </div>

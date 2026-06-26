@@ -16,8 +16,21 @@ import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const rawPageId = searchParams.get("pageId") ?? NOTION_COURSE_PAGE_ID;
+  const rawPageId =
+    searchParams.get("pageId")?.trim() || NOTION_COURSE_PAGE_ID;
   const pageId = normalizeNotionPageId(rawPageId);
+
+  if (!pageId) {
+    return NextResponse.json(
+      {
+        error:
+          "Course page is not configured. Set NOTION_COURSE_PAGE_ID in frontend/.env.",
+        errorCode: "not_configured",
+        pageId: "",
+      },
+      { status: 503 },
+    );
+  }
 
   if (NOTION_ACCESS_MODE === "public") {
     try {

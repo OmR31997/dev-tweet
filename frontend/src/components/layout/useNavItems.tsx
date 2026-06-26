@@ -13,6 +13,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useAuthUser } from "@/store";
 
 export interface NavItem {
   id: string;
@@ -39,6 +40,7 @@ export const MOBILE_NAV_ORDER = [
 /** Shared navigation items used by the desktop rail and mobile tab bar. */
 export function useNavItems(): NavItem[] {
   const t = useTranslations("Nav");
+  const me = useAuthUser();
   const unread = useUnreadMessageCount();
   const notifications = useNotifications();
   const unreadNotifications =
@@ -99,7 +101,7 @@ export function useNavItems(): NavItem[] {
     {
       id: "profile",
       label: t("profile"),
-      href: "/profile",
+      href: me?.id ? `/profile/${me.id}` : "/profile",
       icon: User,
       match: (p) => p.startsWith("/profile"),
     },

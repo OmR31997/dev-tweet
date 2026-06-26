@@ -1,6 +1,7 @@
 "use client";
 
 import { PageHeader } from "@/components/common/PageHeader";
+import { PageLayout } from "@/components/common/PageLayout";
 import { SearchInput } from "@/components/common/SearchInput";
 import {
   filterRoadmaps,
@@ -30,9 +31,9 @@ export function RoadmapsView() {
   const grouped = useMemo(() => groupRoadmaps(filtered), [filtered]);
 
   return (
-    <div className="mx-auto flex min-h-full max-w-3xl flex-col">
-      <PageHeader title={t("title")} subtitle={t("subtitle")} />
-
+    <PageLayout
+      header={<PageHeader title={t("title")} subtitle={t("subtitle")} />}
+    >
       <div className="border-b border-border bg-card px-5 py-4">
         <SearchInput
           value={query}
@@ -103,6 +104,6 @@ export function RoadmapsView() {
           ),
         })}
       </footer>
-    </div>
+    </PageLayout>
   );
 }

@@ -1,5 +1,7 @@
+import { PAGE_GUTTER } from "@/components/common/PageLayout";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import type { AuthUser } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -13,7 +15,7 @@ export function UserRow({
 }) {
   const meta = [user.branch, user.college].filter(Boolean).join(" · ");
   return (
-    <div className="flex items-center gap-3 px-5 py-3 hover:bg-accent/50">
+    <div className={cn("flex items-center gap-3 py-3 hover:bg-accent/50", PAGE_GUTTER)}>
       <Link href={`/profile/${user.id}`} className="shrink-0">
         <UserAvatar name={user.displayName} photoURL={user.photoURL} />
       </Link>

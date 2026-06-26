@@ -1,5 +1,6 @@
 "use client";
 
+import { PAGE_GUTTER } from "@/components/common/PageLayout";
 import { QueryState } from "@/components/common/QueryState";
 import { useGithubActivity } from "@/lib/api";
 import { githubProfileUrl } from "@/lib/github/parse-username";
@@ -45,7 +46,7 @@ export function GitHubActivityCard({ username }: { username: string }) {
   }, [username]);
 
   return (
-    <section className="border-b border-border bg-card px-5 py-5">
+    <section className={cn("border-b border-border bg-card py-5", PAGE_GUTTER)}>
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <GitBranch className="size-4 text-muted-foreground" />
@@ -74,7 +75,7 @@ export function GitHubActivityCard({ username }: { username: string }) {
       </div>
 
       <QueryState
-        isLoading={activity.isLoading}
+        isLoading={activity.isPending}
         isError={activity.isError}
         error={activity.error}
         loadingMessage={t("loading")}

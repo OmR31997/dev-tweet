@@ -1,4 +1,6 @@
 import { LocaleSwitcher } from "@/components/ui";
+import { PAGE_GUTTER } from "@/components/common/PageLayout";
+import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
 interface PageHeaderProps {
@@ -8,7 +10,7 @@ interface PageHeaderProps {
   showLocale?: boolean;
 }
 
-/** Sticky top bar shared across the app screens. */
+/** Pinned top bar shared across the app screens (used with PageLayout). */
 export function PageHeader({
   title,
   subtitle,
@@ -16,7 +18,12 @@ export function PageHeader({
   showLocale = true,
 }: PageHeaderProps) {
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-border bg-background px-5 py-3.5 [padding-top:max(0.875rem,env(safe-area-inset-top))] supports-[backdrop-filter]:bg-background/95 supports-[backdrop-filter]:backdrop-blur-sm md:px-6 md:py-4 md:[padding-top:1rem]">
+    <header
+      className={cn(
+        "z-30 flex shrink-0 items-center justify-between gap-3 border-b border-border bg-background py-3.5 [padding-top:max(0.875rem,env(safe-area-inset-top))] supports-[backdrop-filter]:bg-background/95 supports-[backdrop-filter]:backdrop-blur-sm sm:gap-4 md:py-4 md:[padding-top:1rem]",
+        PAGE_GUTTER,
+      )}
+    >
       <div className="min-w-0">
         <h1 className="truncate text-lg font-semibold tracking-tight">
           {title}

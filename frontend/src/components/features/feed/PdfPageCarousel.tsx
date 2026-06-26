@@ -16,13 +16,26 @@ if (typeof window !== "undefined") {
 type PdfPageCarouselProps = {
   data: Uint8Array;
   compact?: boolean;
+  embedded?: boolean;
   className?: string;
   showNav?: boolean;
   /** In-feed preview: vertical scroll friendly on touch devices. */
   embedInFeed?: boolean;
   /** Fullscreen: horizontal swipe between pages. */
   swipePages?: boolean;
+  onPageInfo?: (current: number, total: number) => void;
 };
+
+function getMaxDisplayHeight(compact?: boolean) {
+  if (compact) return 256;
+  return 520;
+}
+
+function getDevicePixelRatio(embedInFeed: boolean) {
+  if (typeof window === "undefined") return 1;
+  const cap = embedInFeed ? 2 : 2.5;
+  return Math.min(window.devicePixelRatio || 1, cap);
+}
 
 function useDesktopCarouselInput(
   containerRef: React.RefObject<HTMLDivElement | null>,
@@ -160,21 +173,48 @@ function EmbedPdfPageNav({
 export function PdfPageCarousel({
   data,
   compact,
+  embedded,
   className,
   showNav = true,
   embedInFeed = false,
   swipePages = false,
+  onPageInfo,
 }: PdfPageCarouselProps) {
+  const measureRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchPrimary = useTouchPrimaryDevice();
+  const [containerWidth, setContainerWidth] = useState(0);
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageUrls, setPageUrls] = useState<string[]>([]);
   const [rendering, setRendering] = useState(true);
+  const onPageInfoRef = useRef(onPageInfo);
+  onPageInfoRef.current = onPageInfo;
+
+  const notifyPageInfo = useCallback((pageIndex: number, total: number) => {
+    onPageInfoRef.current?.(pageIndex + 1, total);
+  }, []);
+
+  useEffect(() => {
+    const el = measureRef.current;
+    if (!el) return;
+
+    const updateWidth = () => {
+      const width = el.clientWidth;
+      if (width > 0) setContainerWidth(width);
+    };
+
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     const urls: string[] = [];
+
+    if (containerWidth <= 0) return;
 
     setRendering(true);
     setPageUrls([]);
@@ -189,31 +229,35 @@ export function PdfPageCarousel({
         const total = pdf.numPages;
         setNumPages(total);
 
-        const containerWidth = containerRef.current?.clientWidth || 360;
-        const maxHeight = compact ? 224 : 520;
+        const maxHeight = getMaxDisplayHeight(compact);
+        const pixelRatio = getDevicePixelRatio(embedInFeed);
 
         for (let pageNum = 1; pageNum <= total; pageNum++) {
           if (cancelled) return;
           const page = await pdf.getPage(pageNum);
           const baseViewport = page.getViewport({ scale: 1 });
-          const scale = Math.min(
-            containerWidth / baseViewport.width,
-            maxHeight / baseViewport.height,
-          );
+          const scale =
+            Math.min(
+              containerWidth / baseViewport.width,
+              maxHeight / baseViewport.height,
+            ) * pixelRatio;
           const viewport = page.getViewport({ scale });
 
           const canvas = document.createElement("canvas");
           const context = canvas.getContext("2d");
           if (!context) continue;
 
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
+          canvas.width = Math.floor(viewport.width);
+          canvas.height = Math.floor(viewport.height);
 
           await page.render({ canvasContext: context, viewport }).promise;
-          urls.push(canvas.toDataURL("image/jpeg", 0.92));
+          urls.push(canvas.toDataURL("image/png"));
         }
 
-        if (!cancelled) setPageUrls(urls);
+        if (!cancelled) {
+          setPageUrls(urls);
+          notifyPageInfo(0, total);
+        }
       } catch {
         if (!cancelled) setPageUrls([]);
       } finally {
@@ -224,7 +268,7 @@ export function PdfPageCarousel({
     return () => {
       cancelled = true;
     };
-  }, [data, compact]);
+  }, [data, compact, containerWidth, embedInFeed, notifyPageInfo]);
 
   const multiPage = numPages > 1;
   const useStaticEmbed = embedInFeed && touchPrimary;
@@ -238,6 +282,7 @@ export function PdfPageCarousel({
       const next = Math.max(0, Math.min(index, pageUrls.length - 1));
       if (!horizontalScroll) {
         setCurrentPage(next);
+        notifyPageInfo(next, numPages);
         return;
       }
       const container = containerRef.current;
@@ -245,8 +290,9 @@ export function PdfPageCarousel({
       const width = container.clientWidth;
       container.scrollTo({ left: width * next, behavior: "smooth" });
       setCurrentPage(next);
+      notifyPageInfo(next, numPages);
     },
-    [horizontalScroll, pageUrls.length],
+    [horizontalScroll, numPages, notifyPageInfo, pageUrls.length],
   );
 
   const handleScroll = useCallback(() => {
@@ -255,21 +301,24 @@ export function PdfPageCarousel({
     const width = container.clientWidth;
     if (width <= 0) return;
     const index = Math.round(container.scrollLeft / width);
-    setCurrentPage(Math.max(0, Math.min(index, pageUrls.length - 1)));
-  }, [pageUrls.length]);
+    const next = Math.max(0, Math.min(index, pageUrls.length - 1));
+    setCurrentPage(next);
+    notifyPageInfo(next, numPages);
+  }, [notifyPageInfo, numPages, pageUrls.length]);
 
-  const heightClass = compact ? "h-56" : "h-[min(70vh,520px)]";
+  const heightClass = compact ? "h-64" : "h-[min(70vh,520px)]";
 
-  if (rendering) {
+  if (rendering || containerWidth <= 0) {
     return (
       <div
+        ref={measureRef}
         className={cn(
           "flex items-center justify-center bg-muted/40 text-sm text-muted-foreground",
           heightClass,
           className,
         )}
       >
-        Rendering pages…
+        {containerWidth <= 0 ? null : "Rendering pages…"}
       </div>
     );
   }
@@ -277,6 +326,7 @@ export function PdfPageCarousel({
   if (pageUrls.length === 0) {
     return (
       <div
+        ref={measureRef}
         className={cn(
           "flex items-center justify-center bg-muted/40 px-4 text-center text-sm text-muted-foreground",
           heightClass,
@@ -296,7 +346,10 @@ export function PdfPageCarousel({
 
   if (!horizontalScroll) {
     return (
-      <div className={cn("feed-pdf-embed bg-muted/20", className)}>
+      <div
+        ref={measureRef}
+        className={cn("feed-pdf-embed bg-muted/20", className)}
+      >
         <div
           className={cn(
             "feed-pdf-preview relative flex items-center justify-center bg-muted/30",
@@ -314,7 +367,7 @@ export function PdfPageCarousel({
           ) : null}
         </div>
 
-        {multiPage && showNav && useStaticEmbed ? (
+        {multiPage && showNav && useStaticEmbed && !embedInFeed ? (
           <EmbedPdfPageNav
             count={numPages}
             currentPage={currentPage}
@@ -327,7 +380,7 @@ export function PdfPageCarousel({
   }
 
   return (
-    <div className={cn("relative bg-muted/20", className)}>
+    <div ref={measureRef} className={cn("relative bg-muted/20", className)}>
       <div
         ref={containerRef}
         onScroll={handleScroll}
@@ -380,11 +433,13 @@ export function PdfPageCarousel({
               <ChevronRight className="size-5" />
             </button>
           ) : null}
-          <PageDots
-            count={numPages}
-            currentPage={currentPage}
-            onSelect={scrollToPage}
-          />
+          {!embedInFeed ? (
+            <PageDots
+              count={numPages}
+              currentPage={currentPage}
+              onSelect={scrollToPage}
+            />
+          ) : null}
         </>
       ) : null}
     </div>

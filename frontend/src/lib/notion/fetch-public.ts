@@ -18,8 +18,15 @@ export function getTitleFromRecordMap(
   pageId: string,
 ): string {
   const id = toNotionRecordId(pageId);
-  const entry = recordMap.block[id]?.value;
-  if (!entry || !("type" in entry) || entry.type !== "page") return "Course";
+  const raw = recordMap.block[id]?.value;
+  const entry =
+    raw && typeof raw === "object" && "value" in raw && raw.value
+      ? raw.value
+      : raw;
+  if (!entry || typeof entry !== "object" || !("type" in entry)) {
+    return "Course";
+  }
+  if (entry.type !== "page") return "Course";
 
   const titleProp = entry.properties?.title;
   if (!Array.isArray(titleProp)) return "Course";
@@ -29,7 +36,7 @@ export function getTitleFromRecordMap(
     .map((part) => (typeof part === "string" ? part : ""))
     .join("");
 
-  return text || "Course";
+  return text.trim() || "Course";
 }
 
 export function parseNotionHrefPageId(href: string): string | null {

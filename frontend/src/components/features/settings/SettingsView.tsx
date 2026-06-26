@@ -1,6 +1,7 @@
 "use client";
 
 import { PageHeader } from "@/components/common/PageHeader";
+import { PageLayout } from "@/components/common/PageLayout";
 import { Button } from "@/components/ui/button";
 import { useLogout, useUpdateProfile } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -73,9 +74,7 @@ export function SettingsView() {
   if (!user) return null;
 
   return (
-    <div className="mx-auto flex min-h-full max-w-2xl flex-col">
-      <PageHeader title={t("title")} />
-
+    <PageLayout header={<PageHeader title={t("title")} />}>
       <section className="border-b border-border bg-card">
         <h2 className="px-5 pb-1 pt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {t("appearanceSection")}
@@ -129,6 +128,6 @@ export function SettingsView() {
           </Button>
         </div>
       </section>
-    </div>
+    </PageLayout>
   );
 }

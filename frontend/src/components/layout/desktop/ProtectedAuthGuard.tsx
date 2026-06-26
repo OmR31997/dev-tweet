@@ -6,7 +6,7 @@ import { useAuthHasHydrated, useAccessToken } from "@/store";
 import { authActions } from "@/store/action";
 import { useAuthStore } from "@/store/slices/auth.slice";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 /**
  * Redirects signed-out users away from protected routes (e.g. /chat).
@@ -18,6 +18,7 @@ export function ProtectedAuthGuard({ children }: { children: ReactNode }) {
   const accessToken = useAccessToken();
   const refreshToken = useAuthStore((state) => state.refreshToken);
   const [sessionReady, setSessionReady] = useState(false);
+  const sessionReadyRef = useRef(false);
 
   useEffect(() => {
     if (!hasHydrated) return;
@@ -26,7 +27,10 @@ export function ProtectedAuthGuard({ children }: { children: ReactNode }) {
 
     const bootstrap = async () => {
       if (accessToken && !isAccessTokenExpired(accessToken)) {
-        if (!cancelled) setSessionReady(true);
+        if (!cancelled) {
+          sessionReadyRef.current = true;
+          setSessionReady(true);
+        }
         return;
       }
 
@@ -44,6 +48,7 @@ export function ProtectedAuthGuard({ children }: { children: ReactNode }) {
         return;
       }
 
+      sessionReadyRef.current = true;
       setSessionReady(true);
     };
 
@@ -54,7 +59,7 @@ export function ProtectedAuthGuard({ children }: { children: ReactNode }) {
     };
   }, [hasHydrated, accessToken, refreshToken, router]);
 
-  if (!hasHydrated || !sessionReady) {
+  if (!hasHydrated || (!sessionReady && !sessionReadyRef.current)) {
     return null;
   }
 

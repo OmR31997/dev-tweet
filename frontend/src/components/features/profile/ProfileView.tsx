@@ -1,6 +1,8 @@
 "use client";
 
+import { PAGE_GUTTER } from "@/components/common/PageLayout";
 import { PageHeader } from "@/components/common/PageHeader";
+import { PageLayout } from "@/components/common/PageLayout";
 import { QueryState } from "@/components/common/QueryState";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { FollowButton } from "@/components/common/FollowButton";
@@ -14,11 +16,12 @@ import {
 } from "@/lib/api";
 import { getFollowRelationship } from "@/lib/follow.utils";
 import { githubProfileUrl } from "@/lib/github/parse-username";
+import { cn } from "@/lib/utils";
 import { useAuthUser } from "@/store";
 import { GitBranch, MessageCircle, Settings } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { EditProfileDialog } from "./EditProfileDialog";
 import { FollowListDialog, type FollowListTab } from "./FollowListDialog";
 import { GitHubActivityCard } from "./GitHubActivityCard";
@@ -74,11 +77,11 @@ function ProfileHeaderActions({ user }: { user: AuthUser }) {
 
   if (me?.id === user.id) {
     return (
-      <div className="flex gap-2">
-        <Button variant="outline" onClick={() => setEditing(true)}>
+      <div className="flex w-full flex-wrap justify-stretch gap-2 sm:w-auto sm:justify-end">
+        <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => setEditing(true)}>
           Edit profile
         </Button>
-        <Button variant="outline" size="icon" asChild aria-label="Settings">
+        <Button variant="outline" size="icon" className="shrink-0" asChild aria-label="Settings">
           <Link href="/settings">
             <Settings className="size-4" />
           </Link>
@@ -93,9 +96,9 @@ function ProfileHeaderActions({ user }: { user: AuthUser }) {
   }
 
   return (
-    <div className="flex gap-2">
-      <FollowButton target={user} size="default" />
-      <Button variant="outline" asChild>
+    <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+      <FollowButton target={user} size="default" className="flex-1 sm:flex-none" />
+      <Button variant="outline" className="flex-1 sm:flex-none" asChild>
         <Link href={`/messages/${user.id}`}>
           <MessageCircle className="size-4" />
           Message
@@ -140,12 +143,20 @@ export function ProfileView({ userId }: { userId: string }) {
     ? [user.branch, user.college, user.year].filter(Boolean).join(" · ")
     : "";
 
-  return (
-    <div className="mx-auto flex min-h-full max-w-2xl flex-col">
-      <PageHeader title={user?.displayName ?? "Profile"} />
+  const headerTitle =
+    user?.displayName ?? (me?.id === userId ? me.displayName : "Profile");
 
+  const header = useMemo(
+    () => <PageHeader title={headerTitle} />,
+    [headerTitle],
+  );
+
+  const showProfileLoading = userQuery.isPending;
+
+  return (
+    <PageLayout header={header}>
       <QueryState
-        isLoading={userQuery.isLoading}
+        isLoading={showProfileLoading}
         isError={userQuery.isError}
         error={userQuery.error}
         loadingMessage="Loading profile…"
@@ -153,8 +164,8 @@ export function ProfileView({ userId }: { userId: string }) {
       >
         {user ? (
           <>
-            <div className="border-b border-border bg-card px-5 py-6">
-              <div className="flex items-start justify-between gap-4">
+            <div className={cn("border-b border-border bg-card py-5 sm:py-6", PAGE_GUTTER)}>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <UserAvatar
                   name={user.displayName}
                   photoURL={user.photoURL}
@@ -214,7 +225,7 @@ export function ProfileView({ userId }: { userId: string }) {
               <GitHubActivityCard username={user.githubUsername} />
             ) : null}
 
-            <h3 className="px-5 pb-1 pt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <h3 className={cn("pb-1 pt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground", PAGE_GUTTER)}>
               {t("posts")}
             </h3>
             {userPosts.length > 0 ? (
@@ -228,7 +239,7 @@ export function ProfileView({ userId }: { userId: string }) {
                   />
                 ))}
                 {hasMorePosts ? (
-                  <div className="border-b border-border px-5 py-3">
+                  <div className={cn("border-b border-border py-3", PAGE_GUTTER)}>
                     <Button
                       type="button"
                       variant="outline"
@@ -241,13 +252,13 @@ export function ProfileView({ userId }: { userId: string }) {
                 ) : null}
               </>
             ) : (
-              <p className="px-5 py-6 text-sm text-muted-foreground">
+              <p className={cn("py-6 text-sm text-muted-foreground", PAGE_GUTTER)}>
                 {t("noPosts")}
               </p>
             )}
           </>
         ) : null}
       </QueryState>
-    </div>
+    </PageLayout>
   );
 }

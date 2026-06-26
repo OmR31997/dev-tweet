@@ -27,9 +27,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <ChatNavRail />
       <div className="app-shell-column">
         <main
-          {...(!fillRoute ? { "data-app-scroll-root": true } : {})}
           className={cn(
-            fillRoute ? "app-main-fill" : "app-main-scroll",
+            "app-main-fill",
             !fillRoute && hideMobileNav && "max-md:!pb-0",
           )}
         >

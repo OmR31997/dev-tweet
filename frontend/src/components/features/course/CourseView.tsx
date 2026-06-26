@@ -3,7 +3,6 @@
 import { QueryState } from "@/components/common/QueryState";
 import { Button } from "@/components/ui/button";
 import {
-  NOTION_COURSE_PAGE_ID,
   NOTION_COURSE_TITLE,
   notionCoursePublicUrl,
 } from "@/config/course";
@@ -17,7 +16,7 @@ import { NotionBlocks } from "./NotionBlocks";
 
 export function CourseView({ initialPageId }: { initialPageId?: string }) {
   const t = useTranslations("Course");
-  const [pageId, setPageId] = useState(initialPageId ?? NOTION_COURSE_PAGE_ID);
+  const [pageId, setPageId] = useState(() => initialPageId?.trim() ?? "");
   const [history, setHistory] = useState<string[]>([]);
   const [data, setData] = useState<NotionBlocksResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,9 +28,11 @@ export function CourseView({ initialPageId }: { initialPageId?: string }) {
     setError(null);
     setErrorCode(null);
     try {
-      const response = await fetch(
-        `/course-data?pageId=${encodeURIComponent(pageId)}`,
-      );
+      const trimmedPageId = pageId.trim();
+      const url = trimmedPageId
+        ? `/course-data?pageId=${encodeURIComponent(trimmedPageId)}`
+        : "/course-data";
+      const response = await fetch(url);
       const json = (await response.json()) as NotionBlocksResponse & {
         error?: string;
         errorCode?: string;
@@ -73,12 +74,13 @@ export function CourseView({ initialPageId }: { initialPageId?: string }) {
   };
 
   const title = data?.title ?? NOTION_COURSE_TITLE;
-  const publicUrl = notionCoursePublicUrl(pageId);
+  const publicUrl = notionCoursePublicUrl(data?.pageId || pageId);
   const needsSetup = data && !data.configured;
   const needsShare =
     errorCode === "not_shared" ||
     errorCode === "not_found" ||
-    errorCode === "unauthorized";
+    errorCode === "unauthorized" ||
+    errorCode === "not_configured";
   const needsPublish = errorCode === "not_published";
   const isPublicMode = data?.mode === "public" && data.recordMap;
 
@@ -111,7 +113,7 @@ export function CourseView({ initialPageId }: { initialPageId?: string }) {
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {needsSetup ? (
-          <div className="mx-auto max-w-2xl space-y-4 px-6 py-10 text-center">
+          <div className="mx-auto max-w-3xl space-y-4 px-5 py-10 text-center md:px-6">
             <p className="text-sm text-muted-foreground">{t("setupHint")}</p>
             <ol className="space-y-2 text-left text-sm text-muted-foreground">
               <li>{t("setupStep1")}</li>
@@ -126,7 +128,7 @@ export function CourseView({ initialPageId }: { initialPageId?: string }) {
             </Button>
           </div>
         ) : needsPublish && error ? (
-          <div className="mx-auto max-w-2xl space-y-5 px-6 py-10">
+          <div className="mx-auto max-w-3xl space-y-5 px-5 py-10 md:px-6">
             <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
               {error}
             </div>
@@ -152,7 +154,7 @@ export function CourseView({ initialPageId }: { initialPageId?: string }) {
             </div>
           </div>
         ) : needsShare && error ? (
-          <div className="mx-auto max-w-2xl space-y-5 px-6 py-10">
+          <div className="mx-auto max-w-3xl space-y-5 px-5 py-10 md:px-6">
             <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
               {error}
             </div>
@@ -198,7 +200,7 @@ export function CourseView({ initialPageId }: { initialPageId?: string }) {
                 onOpenPage={openSubPage}
               />
             ) : data?.configured && data.blocks.length > 0 ? (
-              <article className="mx-auto max-w-3xl px-6 py-8">
+              <article className="mx-auto max-w-3xl px-5 py-8 md:px-6">
                 <NotionBlocks blocks={data.blocks} onOpenPage={openSubPage} />
               </article>
             ) : null}

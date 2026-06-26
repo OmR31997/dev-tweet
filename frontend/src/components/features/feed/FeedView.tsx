@@ -1,6 +1,7 @@
 "use client";
 
 import { PageHeader } from "@/components/common/PageHeader";
+import { PageLayout } from "@/components/common/PageLayout";
 import { QueryState } from "@/components/common/QueryState";
 import { usePosts } from "@/lib/api";
 import { useRef } from "react";
@@ -17,30 +18,31 @@ export function FeedView() {
   const composerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="relative mx-auto flex min-h-full max-w-2xl flex-col">
-      <PageHeader title={t("title")} />
-      <PostComposer composerRef={composerRef} />
+    <div className="relative flex h-full min-h-0 w-full min-w-0 flex-1 flex-col">
+      <PageLayout header={<PageHeader title={t("title")} />}>
+        <PostComposer composerRef={composerRef} />
 
-      <QueryState
-        isLoading={posts.isLoading}
-        isError={posts.isError}
-        error={posts.error}
-        isEmpty={(posts.data?.length ?? 0) === 0}
-        loadingMessage={t("loadingFeed")}
-        emptyMessage={t("emptyFeed")}
-        onRetry={() => posts.refetch()}
-      >
-        <div>
-          {posts.data?.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              commentsOpen={commentsPanel.isOpen(post.id)}
-              onToggleComments={() => commentsPanel.toggle(post.id)}
-            />
-          ))}
-        </div>
-      </QueryState>
+        <QueryState
+          isLoading={posts.isLoading}
+          isError={posts.isError}
+          error={posts.error}
+          isEmpty={(posts.data?.length ?? 0) === 0}
+          loadingMessage={t("loadingFeed")}
+          emptyMessage={t("emptyFeed")}
+          onRetry={() => posts.refetch()}
+        >
+          <div>
+            {posts.data?.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                commentsOpen={commentsPanel.isOpen(post.id)}
+                onToggleComments={() => commentsPanel.toggle(post.id)}
+              />
+            ))}
+          </div>
+        </QueryState>
+      </PageLayout>
 
       <FeedFloatingAction composerRef={composerRef} />
     </div>

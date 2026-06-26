@@ -15,9 +15,11 @@ const PREVIEW_COLS = 8;
 export function PostCsvViewer({
   attachment,
   compact,
+  embedded,
 }: {
   attachment: PostAttachment;
   compact?: boolean;
+  embedded?: boolean;
 }) {
   const [rows, setRows] = useState<string[][] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -62,8 +64,9 @@ export function PostCsvViewer({
     <PostDocumentShell
       attachment={attachment}
       kindLabel="Spreadsheet"
-      icon={<FileSpreadsheet className="size-5" />}
+      icon={<FileSpreadsheet className={embedded ? "size-4" : "size-5"} />}
       compact={compact}
+      embedded={embedded}
     >
       <div
         className={cn(

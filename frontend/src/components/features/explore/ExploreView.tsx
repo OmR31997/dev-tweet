@@ -2,6 +2,7 @@
 
 import { FollowButton } from "@/components/common/FollowButton";
 import { PageHeader } from "@/components/common/PageHeader";
+import { PageLayout } from "@/components/common/PageLayout";
 import { UserRow } from "@/components/common/UserRow";
 import { SearchInput } from "@/components/common/SearchInput";
 import { Button } from "@/components/ui/button";
@@ -42,9 +43,7 @@ export function ExploreView() {
   const hasMorePosts = allPosts.length > EXPLORE_PREVIEW_COUNT;
 
   return (
-    <div className="mx-auto flex min-h-full max-w-2xl flex-col">
-      <PageHeader title={t("title")} />
-
+    <PageLayout header={<PageHeader title={t("title")} />}>
       <div className="border-b border-border bg-card px-5 py-4">
         <SearchInput
           value={query}
@@ -113,6 +112,6 @@ export function ExploreView() {
           </p>
         )}
       </section>
-    </div>
+    </PageLayout>
   );
 }

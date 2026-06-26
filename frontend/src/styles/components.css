@@ -53,6 +53,14 @@
     padding-bottom: var(--mobile-nav-safe-height);
   }
 
+  .app-page-scroll {
+    @apply min-h-0 flex-1 overflow-y-auto overscroll-y-contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overflow-anchor: auto;
+    padding-bottom: var(--mobile-nav-safe-height);
+  }
+
   .feed-post {
     touch-action: pan-y;
   }
@@ -89,11 +97,12 @@
   }
 
   .app-main-fill > * {
-    @apply min-h-0 flex-1;
+    @apply min-h-0 min-w-0 w-full flex-1;
   }
 
   @media (min-width: 768px) {
-    .app-main-scroll {
+    .app-main-scroll,
+    .app-page-scroll {
       padding-bottom: 0;
     }
   }

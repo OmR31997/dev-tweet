@@ -37,10 +37,17 @@ export function useUsers(q?: string, limit = 25, options?: UseUsersOptions) {
 
 export function useUser(id: string | undefined) {
   const accessToken = useAccessToken();
+  const me = useAuthUser();
+
   return useQuery({
     queryKey: queryKeys.users.detail(id ?? ""),
     queryFn: () => userService.byId(id as string),
     enabled: Boolean(accessToken) && Boolean(id),
+    placeholderData: (previous) => {
+      if (previous) return previous;
+      if (id && me?.id === id) return me;
+      return undefined;
+    },
   });
 }
 

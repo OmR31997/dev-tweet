@@ -28,10 +28,14 @@ function PostImageTile({
   id,
   index,
   onOpen,
+  embedded,
+  compact,
 }: {
   id: string;
   index: number;
   onOpen: (index: number) => void;
+  embedded?: boolean;
+  compact?: boolean;
 }) {
   const tap = useTapOnly(() => onOpen(index));
 
@@ -39,7 +43,10 @@ function PostImageTile({
     <button
       type="button"
       aria-label="View photo"
-      className="feed-action-btn block overflow-hidden rounded-xl border border-border transition-opacity hover:opacity-95"
+      className={cn(
+        "feed-action-btn block overflow-hidden transition-opacity hover:opacity-95",
+        embedded ? "rounded-lg" : "rounded-xl border border-border",
+      )}
       onClick={tap.onClick}
       onPointerDown={tap.onPointerDown}
       onPointerUp={tap.onPointerUp}
@@ -49,14 +56,26 @@ function PostImageTile({
       <img
         src={resolveImageUrl(id)}
         alt=""
-        className="pointer-events-none max-h-96 w-full object-cover"
+        className={cn(
+          "pointer-events-none w-full object-cover",
+          compact ? "max-h-48" : "max-h-96",
+        )}
         draggable={false}
+        decoding="async"
       />
     </button>
   );
 }
 
-function PostImageGrid({ imageIds }: { imageIds: string[] }) {
+function PostImageGrid({
+  imageIds,
+  embedded,
+  compact,
+}: {
+  imageIds: string[];
+  embedded?: boolean;
+  compact?: boolean;
+}) {
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   const previewItem = useMemo(() => {
@@ -76,7 +95,8 @@ function PostImageGrid({ imageIds }: { imageIds: string[] }) {
     <>
       <div
         className={cn(
-          "mt-2 grid gap-2 overflow-hidden rounded-xl",
+          "grid gap-1.5 overflow-hidden",
+          embedded ? "mt-1.5 rounded-lg" : "mt-2 gap-2 rounded-xl",
           imageIds.length === 1 ? "grid-cols-1" : "grid-cols-2",
         )}
       >
@@ -85,6 +105,8 @@ function PostImageGrid({ imageIds }: { imageIds: string[] }) {
             key={id}
             id={id}
             index={index}
+            embedded={embedded}
+            compact={compact}
             onOpen={setPreviewIndex}
           />
         ))}
@@ -117,9 +139,11 @@ function PostImageGrid({ imageIds }: { imageIds: string[] }) {
 function PostAttachmentCard({
   attachment,
   compact,
+  embedded,
 }: {
   attachment: PostAttachment;
   compact?: boolean;
+  embedded?: boolean;
 }) {
   const kind = attachmentKind(attachment);
   const href = resolveChatFileUrl(attachment.fileId);
@@ -127,7 +151,13 @@ function PostAttachmentCard({
 
   if (kind === "video") {
     return (
-      <div className="mt-2 overflow-hidden rounded-xl border border-border bg-black">
+      <div
+        className={cn(
+          "overflow-hidden rounded-lg bg-black",
+          embedded ? "mt-1.5" : "mt-2",
+          !embedded && "border border-border",
+        )}
+      >
         <video
           src={href}
           controls
@@ -140,11 +170,23 @@ function PostAttachmentCard({
   }
 
   if (kind === "pdf") {
-    return <PostPdfViewer attachment={attachment} compact={compact} />;
+    return (
+      <PostPdfViewer
+        attachment={attachment}
+        compact={compact}
+        embedded={embedded}
+      />
+    );
   }
 
   if (isCsvAttachment(attachment)) {
-    return <PostCsvViewer attachment={attachment} compact={compact} />;
+    return (
+      <PostCsvViewer
+        attachment={attachment}
+        compact={compact}
+        embedded={embedded}
+      />
+    );
   }
 
   const Icon =
@@ -156,14 +198,29 @@ function PostAttachmentCard({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="mt-2 flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3 transition-colors hover:bg-muted/50"
+      className={cn(
+        "flex items-center gap-3 rounded-lg border border-border bg-muted/20 transition-colors hover:bg-muted/35",
+        embedded ? "mt-1.5 px-2.5 py-2" : "mt-2 px-4 py-3",
+      )}
     >
-      <div className="grid size-11 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-        <Icon className="size-5" />
+      <div
+        className={cn(
+          "grid shrink-0 place-items-center rounded-md bg-primary/10 text-primary",
+          embedded ? "size-8" : "size-11",
+        )}
+      >
+        <Icon className={embedded ? "size-4" : "size-5"} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{attachment.filename}</p>
-        <p className="text-xs text-muted-foreground">
+        <p
+          className={cn(
+            "truncate font-medium",
+            embedded ? "text-xs" : "text-sm",
+          )}
+        >
+          {attachment.filename}
+        </p>
+        <p className="text-[11px] text-muted-foreground">
           {typeLabel}
           {sizeLabel ? ` · ${sizeLabel}` : ""}
         </p>
@@ -269,9 +326,11 @@ function RemoveButton({
 export function PostMedia({
   post,
   compact,
+  embedded,
 }: {
   post: Pick<Post, "imageIds" | "attachments">;
   compact?: boolean;
+  embedded?: boolean;
 }) {
   const hasImages = post.imageIds.length > 0;
   const hasAttachments = (post.attachments?.length ?? 0) > 0;
@@ -279,14 +338,23 @@ export function PostMedia({
 
   return (
     <>
-      {hasImages ? <PostImageGrid imageIds={post.imageIds} /> : null}
-      {post.attachments?.map((attachment) => (
-        <PostAttachmentCard
-          key={attachment.fileId}
-          attachment={attachment}
+      {hasImages ? (
+        <PostImageGrid
+          imageIds={post.imageIds}
+          embedded={embedded}
           compact={compact}
         />
-      ))}
+      ) : null}
+      <div className={cn(embedded && "min-w-0")}>
+        {post.attachments?.map((attachment) => (
+          <PostAttachmentCard
+            key={attachment.fileId}
+            attachment={attachment}
+            compact={compact}
+            embedded={embedded}
+          />
+        ))}
+      </div>
     </>
   );
 }

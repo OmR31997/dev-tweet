@@ -78,7 +78,7 @@ export function ChatNavRail() {
             />
             <div className="absolute inset-x-3 bottom-full z-20 mb-2 overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg">
               <Link
-                href="/profile"
+                href={user?.id ? `/profile/${user.id}` : "/profile"}
                 onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
               >
