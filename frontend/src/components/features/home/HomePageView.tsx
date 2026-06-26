@@ -3,11 +3,12 @@
 import { Button } from "@/components/ui/button";
 import { LocaleSwitcher } from "@/components/ui";
 import { useAuthHasHydrated, useIsAuthenticated } from "@/store";
+import { cn } from "@/lib/utils";
 import { Bell, MessageCircle, PenSquare, Users } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const FEATURE_KEYS = [
   { icon: PenSquare, titleKey: "feature1Title", bodyKey: "feature1Description" },
@@ -26,6 +27,14 @@ export function HomePageView() {
   const hasHydrated = useAuthHasHydrated();
   const isAuthenticated = useIsAuthenticated();
   const year = useMemo(() => new Date().getFullYear(), []);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setIsScrolled(window.scrollY > 0);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     if (hasHydrated && isAuthenticated) {
@@ -35,18 +44,20 @@ export function HomePageView() {
 
   return (
     <div className="min-h-dvh bg-background">
-      <header className="sticky top-0 z-30 mx-auto flex max-w-5xl items-center justify-between border-b border-border bg-background/95 px-6 py-5 backdrop-blur-sm supports-[backdrop-filter]:bg-background/95">
-        <span className="flex items-center gap-2 text-lg font-bold tracking-tight">
-          <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-            D
+      <header
+        className={cn(
+          "sticky top-0 z-30 bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/95 md:border-b-0",
+          isScrolled && "border-b border-border",
+        )}
+      >
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
+          <span className="flex items-center gap-2 text-lg font-bold tracking-tight">
+            <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
+              D
+            </span>
+            {t("brand")}
           </span>
-          {t("brand")}
-        </span>
-        <div className="flex items-center gap-2">
           <LocaleSwitcher />
-          <Button asChild>
-            <Link href="/login">{t("login")}</Link>
-          </Button>
         </div>
       </header>
 
