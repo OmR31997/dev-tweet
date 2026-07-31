@@ -55,7 +55,7 @@ if ! [[ -f ".env" ]]; then
 fi
 
 echo "Installing dependencies..."
-echo pwd
+echo pwd ls
 if npm ci --legacy-peer-deps --no-audit --no-fund; then
     echo "Dependencies installed successfully."
 else
