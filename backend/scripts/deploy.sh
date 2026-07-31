@@ -48,6 +48,7 @@ cd "$APP_DIR"
 fetch_latest_code
 git checkout "$BRANCH_NAME"
 git pull --ff-only origin "$BRANCH_NAME"
+cleanup_space
 
 cd "$APP_DIR/backend"
 echo "Current working directory: $(pwd)"
