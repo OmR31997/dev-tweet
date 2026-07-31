@@ -36,11 +36,22 @@ fetch_latest_code(){
 
     if git fetch origin; then
         echo "Successfully fetched latest code."
-        return 0
     else
         echo "Failed to fetch latest code. Please check your network connection and repository access."
         exit 1
     fi
+
+    if ! git diff-index --quiet HEAD --; then
+        echo "Uncommitted changes present. Please commit or stash before deploy."
+        exit 1
+    fi
+
+    echo "Updating branch..."
+    if ! git pull --ff-only origin "$BRANCH_NAME"; then
+        echo "Branch update failed: divergence detected. Deployment aborted."
+        exit 1
+    fi
+
 }
 
 echo "======================================"
@@ -51,8 +62,6 @@ echo "======================================"
 
 cd "$APP_DIR"
 fetch_latest_code
-git checkout "$BRANCH_NAME"
-git pull --ff-only origin "$BRANCH_NAME"
 cleanup_space
 
 cd "$APP_DIR/backend"
@@ -63,7 +72,8 @@ if ! [[ -f ".env" ]]; then
 fi
 
 echo "Installing dependencies..."
-echo pwd ls
+pwd
+ls -lah
 if npm install --legacy-peer-deps --no-audit --no-fund; then
     echo "Dependencies installed successfully."
 else
@@ -97,3 +107,6 @@ else
         exit 1
     fi
 fi
+
+pm2 save
+echo "Deployment of $APP_NAME completed successfully."
