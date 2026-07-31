@@ -50,6 +50,7 @@ git checkout "$BRANCH_NAME"
 git pull --ff-only origin "$BRANCH_NAME"
 
 cd "$APP_DIR/backend"
+echo "Current working directory: $(pwd)"
 if ! [[ -f ".env" ]]; then
     echo ".env file not found. Please ensure it exists in the repository."
     exit 1
@@ -57,7 +58,7 @@ fi
 
 echo "Installing dependencies..."
 echo pwd ls
-if npm ci --legacy-peer-deps --no-audit --no-fund; then
+if npm install --legacy-peer-deps --no-audit --no-fund; then
     echo "Dependencies installed successfully."
 else
     echo "Dependency installation failed. Please check the logs for details."
