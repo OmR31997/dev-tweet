@@ -12,6 +12,11 @@ cleanup_space(){
   rm -rf .next .turbo .cache .next/cache node_modules/.cache || true
   rm -f npm-debug.log yarn-error.log pnpm-debug.log || true
 
+  if [[ -d "node_modules" ]]; then
+    rm -rf node_modules/.cache || true
+    rm -rf node_modules || true
+  fi
+
   if command -v npm &> /dev/null; then
     npm cache clean --force || true
   fi
