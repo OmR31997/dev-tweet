@@ -6,7 +6,7 @@ export class AppController {
   @Public()
   @Get()
   root() {
-    return { ok: true, service: 'devtweethub-api' };
+    return { ok: true, service: 'devtweethub-api-v1' };
   }
 
   @Public()
