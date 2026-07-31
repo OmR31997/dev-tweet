@@ -14,8 +14,6 @@ jobs:
   ci:
     name: Continuous Integration (Testing)
     runs-on: ubuntu-latest
-    working-directory: "$HOME/projects/${{secrets.APP_NAME}}"
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -28,9 +26,11 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
+        working-directory: backend
 
       - name: Run tests
         run: npm run test
+        working-directory: backend
 
   cd:
     name: Continuous Deployment (Deployment)
