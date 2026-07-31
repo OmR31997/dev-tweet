@@ -7,11 +7,6 @@ APP_NAME="${APP_NAME:?APP_NAME is required}"
 APP_DIR="${APP_DIR:?APP_DIR is required}"
 BRANCH_NAME="${BRANCH_NAME:?BRANCH_NAME is required}"
 
-# Derive namespace and port label
-NAMESPACE="${APP_NAME%%-*}"
-NAMESPACE="${NAMESPACE:0:3}"
-PORT_LABEL="${NAMESPACE^^}-${PORT}"
-
 cleanup_space(){
   echo "Cleaning up space..."
   rm -rf .next .turbo .cache .next/cache node_modules/.cache || true
