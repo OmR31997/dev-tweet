@@ -30,7 +30,7 @@ jobs:
 
       - name: Run tests
         run: npm run test
-        working-directory: backend
+        working-directory: "$HOME/projects/${{secrets.APP_NAME}}"
 
   cd:
     name: Continuous Deployment (Deployment)
