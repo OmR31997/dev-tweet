@@ -80,7 +80,7 @@ if pm2 describe "$APP_NAME" &> /dev/null; then
     fi
 else
     echo "Starting the application using PM2..."
-    if PORT=3000 pm2 start npm --name "$APP_NAME" --namespace "$PORT_LABEL" -- run start; then
+    if PORT=4000 pm2 start npm --name "$APP_NAME" --namespace "API-DT-4000" -- run start; then
         echo "Application started successfully."
     else
         echo "Failed to start the application. Please check PM2 logs for details."
