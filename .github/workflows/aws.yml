@@ -8,6 +8,7 @@ permissions:
 
 env:
   NODE_VERSION: 24
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
   NODE_OPTIONS: --no-deprecation
 
 jobs:
@@ -29,7 +30,7 @@ jobs:
         working-directory: backend
 
       - name: Run tests
-        run: npm run test
+        run: npm test
         working-directory: backend
 
   cd:
