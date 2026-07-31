@@ -49,6 +49,8 @@ fetch_latest_code
 git checkout "$BRANCH_NAME"
 git pull --ff-only origin "$BRANCH_NAME"
 
+cd "backend"
+
 if ! [[ -f ".env" ]]; then
     echo ".env file not found. Please ensure it exists in the repository."
     exit 1
