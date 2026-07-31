@@ -63,6 +63,7 @@ else
 fi 
 
 echo "Building the application..."
+
 if npm run build; then
     echo "Build successful."
 else
