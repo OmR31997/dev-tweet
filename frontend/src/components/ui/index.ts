@@ -1,5 +1,0 @@
-export { Button, buttonVariants } from "./button"
-export { Typography, typographyVariants } from "./typography"
-export { Input } from "./input"
-export { Label } from "./label"
-export { LocaleSwitcher } from "./locale/LocaleSwitcher"
